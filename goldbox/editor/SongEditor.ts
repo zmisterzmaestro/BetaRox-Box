@@ -985,7 +985,16 @@ export class SongEditor {
         "Customize Instrument",
     );
     */
-    private readonly _addEnvelopeButton: HTMLButtonElement = button({ type: "button", class: "add-envelope" });
+    private readonly _addEnvelopeButton: HTMLButtonElement = button({ type: "button", class: "add-envelope", "aria-label": "Add envelope" });
+    private readonly _envelopePanel = HTML.details({ class: "envelopePanel" },
+        HTML.summary({ onkeydown: (event: KeyboardEvent) => event.stopPropagation(), onkeyup: (event: KeyboardEvent) => event.stopPropagation() }, "Envelope Settings"),
+        div({ class: "envelopeTools" },
+            span({ class: "tip", onclick: () => this._openPrompt("envelopes") }, "Envelopes"),
+            this._addEnvelopeButton,
+        ),
+        this._envelopeEditor.container,
+        HTML.small("Choose a shape to set its speed and range. BetaRox uses preset curves without separate inversion or step controls."),
+    );
     private readonly _customInstrumentSettingsGroup: HTMLDivElement = div({ class: "editor-controls" },
         this._panSliderRow,
         this._panDropdownGroup,
@@ -1034,11 +1043,6 @@ export class SongEditor {
         this._echoSustainRow,
         this._echoDelayRow,
         this._reverbRow,
-        div({ style: `padding: 2px 0; margin-left: 2em; display: flex; align-items: center;` },
-            span({ style: `flex-grow: 1; text-align: center;` }, span({ class: "tip", onclick: () => this._openPrompt("envelopes") }, "Envelopes")),
-            this._addEnvelopeButton,
-        ),
-        this._envelopeEditor.container,
     );
     private readonly _instrumentCopyGroup: HTMLDivElement = div({ class: "editor-controls" },
         div({ class: "selectRow" },
@@ -1061,6 +1065,7 @@ export class SongEditor {
         this._instrumentsButtonRow,
         this._instrumentTypeSelectRow,
         this._instrumentVolumeSliderRow,
+        this._envelopePanel,
         //this._customizeInstrumentButton,
         this._customInstrumentSettingsGroup,
     );
@@ -1093,7 +1098,7 @@ export class SongEditor {
         this._loopEditor.container,
     );
     private readonly _trackVisibleArea: HTMLDivElement = div({ style: "position: absolute; width: 100%; height: 100%; pointer-events: none;" });
-    private readonly _trackControls = div({ class: "trackControls" }, this._muteEditor.labels.container, this._muteEditor.container);
+    private readonly _trackControls = div({ class: "trackControls" }, this._muteEditor.container);
     private readonly _trackAndMuteContainer: HTMLDivElement = div({ class: "trackAndMuteContainer" },
         this._trackControls,
         this._trackContainer,
@@ -1190,6 +1195,7 @@ export class SongEditor {
     );
 
     public readonly mainLayer: HTMLDivElement = div({ class: "beepboxEditor", tabIndex: "0" },
+        this._muteEditor.labels.container,
         this._patternArea,
         this._trackArea,
         this._settingsArea,
@@ -2013,6 +2019,7 @@ export class SongEditor {
 
         if (!this._doc.song.getChannelIsMod(this._doc.channel)) {
 
+            this._envelopePanel.hidden = false;
             this._customInstrumentSettingsGroup.style.display = "";
             this._panSliderRow.style.display = "";
             this._panDropdownGroup.style.display = (this._openPanDropdown ? "" : "none");
@@ -2902,6 +2909,7 @@ export class SongEditor {
 
             //this._instrumentSelectRow.style.display = "none";
 
+            this._envelopePanel.hidden = true;
             this._customInstrumentSettingsGroup.style.display = "none";
             this._panSliderRow.style.display = "none";
             this._panDropdownGroup.style.display = "none";

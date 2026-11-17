@@ -4,7 +4,7 @@ BetaRox is a standalone browser-based music editor in the BeepBox family. It bui
 
 ## Channel names
 
-Click or tap **Channel name** beside a track. Press Enter or tap elsewhere to save, or Escape to cancel. Labels stay with their channels when reordered and are included in native JSON exports.
+Click or tap a numbered **Channel name** field in the left column. Press Enter or tap elsewhere to save, or Escape to cancel. Labels stay with their channels when reordered and are included in native JSON exports.
 
 **File → Copy BetaRox Song URL** includes labels. **File → Copy URL Without Channel Names** shares the same music and tuning with blank labels.
 

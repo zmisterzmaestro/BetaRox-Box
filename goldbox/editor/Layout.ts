@@ -17,9 +17,9 @@ export class Layout {
 				.beepboxEditor {
 					width: 100%;
 					height: 100vh;
-					grid-template-columns: minmax(0, 1fr) 390px; /* minmax(0, 1fr) min-content; Chrome 80 grid layout regression. https://bugs.chromium.org/p/chromium/issues/detail?id=1050307 */
+					grid-template-columns: var(--label-width) minmax(0, 1fr) 390px; /* minmax(0, 1fr) min-content; Chrome 80 grid layout regression. https://bugs.chromium.org/p/chromium/issues/detail?id=1050307 */
 					grid-template-rows: minmax(481px, 1fr) minmax(0, min-content);
-					grid-template-areas: "pattern-area settings-area" "track-area track-area";
+					grid-template-areas: "channel-labels pattern-area settings-area" "channel-labels track-area track-area";
 				}
 				.beepboxEditor .pattern-area {
 					width: 100%;
@@ -106,9 +106,9 @@ export class Layout {
 				.beepboxEditor {
 					width: 100%;
 					height: 100vh;
-					grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 192px;
+					grid-template-columns: var(--label-width) minmax(0, 1fr) minmax(0, 1fr) 192px;
 					grid-template-rows: 1fr;
-					grid-template-areas: "track-area pattern-area settings-area";
+					grid-template-areas: "channel-labels track-area pattern-area settings-area";
 				}
 				.beepboxEditor .pattern-area {
 					width: 100%;
@@ -203,9 +203,9 @@ export class Layout {
 				.beepboxEditor {
 					width: 100%;
 					height: 100vh;
-					grid-template-columns: 512px minmax(0, 1fr) 30em;
+					grid-template-columns: var(--label-width) minmax(0, 512px) minmax(170px, 1fr) minmax(192px, 30em);
 					grid-template-rows: minmax(481px, 1fr) min-content;
-					grid-template-areas: "track-area pattern-area settings-area";
+					grid-template-areas: "channel-labels track-area pattern-area settings-area";
 				}
 				.beepboxEditor .pattern-area {
 					width: 100%;
