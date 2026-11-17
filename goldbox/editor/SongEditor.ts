@@ -987,12 +987,13 @@ export class SongEditor {
     */
     private readonly _addEnvelopeButton: HTMLButtonElement = button({ type: "button", class: "add-envelope", "aria-label": "Add envelope" });
     private readonly _envelopePanel = HTML.details({ class: "envelopePanel" },
-        HTML.summary("Envelope Settings"),
+        HTML.summary({ onkeydown: (event: KeyboardEvent) => event.stopPropagation(), onkeyup: (event: KeyboardEvent) => event.stopPropagation() }, "Envelope Settings"),
         div({ class: "envelopeTools" },
             span({ class: "tip", onclick: () => this._openPrompt("envelopes") }, "Envelopes"),
             this._addEnvelopeButton,
         ),
         this._envelopeEditor.container,
+        HTML.small("Choose a shape to set its speed and range. BetaRox uses preset curves without separate inversion or step controls."),
     );
     private readonly _customInstrumentSettingsGroup: HTMLDivElement = div({ class: "editor-controls" },
         this._panSliderRow,

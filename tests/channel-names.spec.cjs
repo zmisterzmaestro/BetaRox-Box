@@ -132,7 +132,8 @@ test("navigation, channel sidebar and instrument envelope settings", async ({ pa
         expect(side.y).toBeLessThanOrEqual(grid.y + 1);
         expect(link.y + link.height).toBeLessThanOrEqual(grid.y + 1);
     }
-    await page.locator(".envelopePanel summary").click();
+    await page.locator(".envelopePanel summary").focus();
+    await page.keyboard.press("Enter");
     await expect(page.getByText("Note size controls note volume by default.")).toBeVisible();
     await page.getByRole("button", { name: "Add envelope" }).click();
     const shape = page.getByRole("combobox", { name: "Envelope shape 1", exact: true });
