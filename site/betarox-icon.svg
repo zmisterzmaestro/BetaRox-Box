@@ -1,1 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#20202b"/><g fill="#e7c56c"><rect x="10" y="24" width="6" height="16" rx="2"/><rect x="19" y="17.5" width="6" height="29" rx="2"/><rect x="28" y="10" width="6" height="44" rx="2"/><rect x="37" y="15" width="6" height="34" rx="2"/><rect x="46" y="22.5" width="6" height="19" rx="2"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="BetaRox soundwave dinosaur">
+  <rect width="64" height="64" rx="14" fill="#15251d"/>
+  <g fill="none" stroke="#b6df88" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 33h4m42 0h4M15 25v16m6-23v30m22-26v22m6-16v10" stroke-width="3"/>
+    <path d="M24 40c0-4 2-7 5-9l-1-7c0-2 2-3 4-2l7 4 7 1c4 1 6 4 6 8v7h-6l-4 5h-9l-4-5h-5z" fill="#b6df88" stroke-width="2"/>
+    <path d="M29 32h.1M42 31h.1" stroke="#15251d" stroke-width="3"/>
+    <path d="M24 38h-6m7 4h-5m23-6 8-2" stroke="#15251d" stroke-width="2"/>
+  </g>
+  <circle cx="43" cy="30" r="1.5" fill="#15251d"/>
+</svg>

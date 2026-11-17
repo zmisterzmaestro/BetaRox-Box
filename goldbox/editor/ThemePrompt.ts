@@ -10,6 +10,9 @@ const { button, div, h2, select, option } = HTML;
 
 export class ThemePrompt implements Prompt {
 	private readonly _themeSelect: HTMLSelectElement = select({ style: "width: 100%;" },
+		option({ value: "betarox fern" }, "BetaRox Fern — Dark"),
+		option({ value: "betarox coral" }, "BetaRox Coral — Light"),
+		option({ value: "betarox fossil" }, "BetaRox Fossil — Alternate"),
 		option({ value: "dark classic" }, "BeepBox Dark"),
 		option({ value: "light classic" }, "BeepBox Light"),
 		option({ value: "dark competition" }, "BeepBox Competition Dark"),
@@ -65,7 +68,7 @@ export class ThemePrompt implements Prompt {
 		if (this.lastTheme != null) {
 			ColorConfig.setTheme(this.lastTheme);
 		} else {
-			ColorConfig.setTheme("dark classic");
+			ColorConfig.setTheme("betarox fern");
 		}
 		this._doc.undo();
 	}

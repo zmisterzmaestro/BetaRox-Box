@@ -1333,11 +1333,17 @@ document.head.appendChild(HTML.style({ type: "text/css" }, `
 	position: sticky;
 	left: 0;
 	z-index: 1;
+	align-self: stretch;
+	padding-right: 8px;
+	margin-right: 8px;
+	border-right: 1px solid ${ColorConfig.uiWidgetBackground};
 	background: ${ColorConfig.editorBackground};
 }
 
 .beepboxEditor .channelLabels {
-	width: clamp(64px, 12vw, 104px);
+	width: clamp(72px, 12vw, 112px);
+	flex: 0 0 auto;
+	background: ${ColorConfig.editorBackground};
 }
 
 .beepboxEditor .channelLabels input[type=text] {
