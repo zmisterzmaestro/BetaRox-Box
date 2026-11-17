@@ -20,6 +20,20 @@ const beepboxEditorContainer: HTMLElement = document.getElementById("beepboxEdit
 beepboxEditorContainer.appendChild(editor.mainLayer);
 editor.whenUpdated();
 
+const labLink = document.querySelector<HTMLAnchorElement>("#betarox-player-link");
+if (labLink) {
+	const syncLabLink = (): void => {
+		const destination = new URL("/editor/player/", location.href);
+		destination.search = location.search;
+		labLink.href = doc.song.toCompatibleUrl(destination.href);
+	};
+	// Serialize on interaction so edits are included even when the address bar hides the song.
+	syncLabLink();
+	for (const event of ["focus", "pointerdown", "contextmenu", "click"]) {
+		labLink.addEventListener(event, syncLabLink);
+	}
+}
+
 // Fade-in transitions
 editor.mainLayer.className += " load";
 editor.mainLayer.getElementsByClassName("pattern-area")[0].className += " load";

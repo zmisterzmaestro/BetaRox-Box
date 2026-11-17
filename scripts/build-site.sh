@@ -3,8 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$ROOT/_site"
 
-# Compile only the editor and synthesizer. The separate player and lab pages
-# remain in the source project and are intentionally outside this site copy.
+# Compile the editor and synthesizer. BetaSoundLabs builds and serves the lab pages.
 (cd "$ROOT/goldbox" && npm run build-synth && npm run build-editor)
 
 rm -rf "$OUT"

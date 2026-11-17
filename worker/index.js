@@ -14,7 +14,15 @@ export default {
       headers.set("x-betarox-client-ip",request.headers.get("cf-connecting-ip")||"unknown");
       return env.BETASOUNDLABS.fetch(new Request(request,{headers}));
     }
-    const asset=await env.ASSETS.fetch(request);
+    const isLab = /^\/(?:editor\/player|spectral-lab|score)(?:\/|$)/.test(url.pathname);
+    if (isLab && request.method !== "GET" && request.method !== "HEAD") {
+      return new Response("Use GET or HEAD.", { status: 405, headers: { Allow: "GET, HEAD" } });
+    }
+    if (isLab && !env.BETASOUNDLABS) {
+      return json(503, { error: "The BetaSoundLabs service is not connected yet." });
+    }
+    const assetService = isLab ? env.BETASOUNDLABS : env.ASSETS;
+    const asset = await assetService.fetch(request);
     const response=new Response(asset.body,asset);
     response.headers.set("Strict-Transport-Security","max-age=31536000");
     return response;
