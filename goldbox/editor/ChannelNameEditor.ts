@@ -2,12 +2,11 @@
 
 import { HTML } from "imperative-html/dist/esm/elements-strict";
 import { Channel } from "../synth/synth";
-import { Config } from "../synth/SynthConfig";
 import { ChangeChannelName } from "./changes";
 import { SongDocument } from "./SongDocument";
 
 export class ChannelNameEditor {
-	public readonly container = HTML.div({ class: "channelLabels", style: "padding-top: " + Config.barEditorHeight + "px" });
+	public readonly container = HTML.div({ class: "channelLabels", role: "group", "aria-label": "Channel names" }, HTML.div({ class: "channelHeading" }, "Channels"));
 	private readonly _inputs: HTMLInputElement[] = [];
 	private _editingChannel: Channel | null = null;
 
@@ -38,14 +37,14 @@ export class ChannelNameEditor {
 			this._refocusStage();
 		});
 		input.addEventListener("keyup", event => event.stopPropagation());
-		this.container.appendChild(input);
+		this.container.appendChild(HTML.div({ class: "channelLabelRow" }, HTML.span({ "aria-hidden": "true" }, String(index + 1)), input));
 		this._inputs.push(input);
 	}
 
 	public render(): void {
 		const channels = this._doc.song.channels;
 		while (this._inputs.length < channels.length) this._addInput(this._inputs.length);
-		while (this._inputs.length > channels.length) this._inputs.pop()!.remove();
+		while (this._inputs.length > channels.length) this._inputs.pop()!.parentElement!.remove();
 		this.container.style.setProperty("--channel-row-height", this._doc.getChannelHeight() + "px");
 		for (let i = 0; i < channels.length; i++) {
 			const input = this._inputs[i], channel = channels[i];

@@ -8,8 +8,7 @@ const engine = { URL, document: { title: "" }, navigator: { platform: "Linux", u
 runInNewContext(readFileSync("goldbox/website/beepbox_synth.js", "utf8"), engine);
 const { Song, Note } = engine.beepbox;
 
-test("channel names survive editing, reordering, undo, sharing and reopening", async ({ page, context }) => {
-    await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin });
+test.beforeEach(async ({ context }) => {
     // Serve the production page's exact CDN dependencies locally for this test.
     for (const [url, module] of [
         ["https://code.jquery.com/jquery-3.4.1.min.js", "jquery/dist/jquery.min.js"],
@@ -18,6 +17,10 @@ test("channel names survive editing, reordering, undo, sharing and reopening", a
     ]) {
         await context.route(url, route => route.fulfill({ path: require.resolve(module), headers: { "access-control-allow-origin": "*" } }));
     }
+});
+
+test("channel names survive editing, reordering, undo, sharing and reopening", async ({ page, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin });
     const song = new Song();
     song.channels[0].patterns[0].notes.push(new Note(36, 0, 24, 3));
     song.referenceA4Hz = 432;
@@ -110,4 +113,32 @@ test("loading older songs clears labels from the previous song", () => {
     song.channels[0].name = "Previous song";
     song.fromBase64String(olderPayload);
     expect(song.channels[0].name).toBe("");
+});
+
+test("navigation, channel sidebar and instrument envelope settings", async ({ page }) => {
+    const song = new Song();
+    const url = song.toCompatibleUrl(editor);
+    const labels = page.locator(".channelLabels");
+    const pattern = page.locator(".pattern-area");
+    const nav = page.getByRole("link", { name: "Open Exploration Lab" });
+    await page.goto(url);
+    for (const layout of ["small", "long", "tall", "wide", "mobile"]) {
+        await page.setViewportSize({ width: layout === "mobile" ? 390 : 1440, height: 900 });
+        await page.evaluate(value => localStorage.setItem("layout", value), layout === "mobile" ? "small" : layout);
+        await page.reload();
+        await expect(labels.locator("input").first()).toBeVisible();
+        const side = await labels.boundingBox(), grid = await pattern.boundingBox(), link = await nav.boundingBox();
+        expect(side.x + side.width).toBeLessThanOrEqual(grid.x + 1);
+        expect(side.y).toBeLessThanOrEqual(grid.y + 1);
+        expect(link.y + link.height).toBeLessThanOrEqual(grid.y + 1);
+    }
+    await page.locator(".envelopePanel summary").click();
+    await expect(page.getByText("Note size controls note volume by default.")).toBeVisible();
+    await page.getByRole("button", { name: "Add envelope" }).click();
+    const shape = page.getByRole("combobox", { name: "Envelope shape 1", exact: true });
+    await shape.selectOption({ label: "decay 1" });
+    await expect(page.locator(".envelopePanel")).toContainText("Halves every 0.100 s");
+    await shape.selectOption({ label: "tremolo4" });
+    await expect(page.locator(".envelopePanel")).toContainText("50–100%");
+    await expect(page.locator("#about-betarox")).toContainText("Thank you to Slarmoo");
 });

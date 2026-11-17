@@ -154,9 +154,9 @@ document.head.appendChild(HTML.style({ type: "text/css" }, `
 
 .beepboxEditor {
 	display: grid;
-    grid-template-columns: minmax(0, 1fr) max-content;
+    grid-template-columns: var(--label-width) minmax(0, 1fr) max-content;
     grid-template-rows: max-content 1fr; /* max-content minmax(0, 1fr); Chrome 80 grid layout regression. https://bugs.chromium.org/p/chromium/issues/detail?id=1050307 */
-    grid-template-areas: "pattern-area settings-area" "track-area settings-area";
+    grid-template-areas: "channel-labels pattern-area settings-area" "channel-labels track-area settings-area";
 	grid-column-gap: 6px;
 	grid-row-gap: 6px;
 	position: relative;
@@ -1336,8 +1336,25 @@ document.head.appendChild(HTML.style({ type: "text/css" }, `
 	background: ${ColorConfig.editorBackground};
 }
 
+.beepboxEditor { --label-width: clamp(78px, 12vw, 120px); }
 .beepboxEditor .channelLabels {
-	width: clamp(64px, 12vw, 104px);
+	grid-area: channel-labels;
+	min-height: 0;
+	max-height: 85vh;
+	overflow-y: auto;
+	align-self: stretch;
+}
+.beepboxEditor .channelHeading { font-weight: bold; padding: 3px 0; }
+.beepboxEditor .channelLabelRow {
+	display: grid;
+	grid-template-columns: 1.3em minmax(0, 1fr);
+	align-items: center;
+}
+.beepboxEditor .channelLabelRow span { text-align: center; font-size: .8em; }
+.beepboxEditor .envelopePanel summary { cursor: pointer; font-weight: bold; padding: 4px 0; }
+.beepboxEditor .envelopeTools { display: flex; align-items: center; justify-content: space-between; }
+.beepboxEditor .envelopeReadout { font-size: .88em; line-height: 1.35; margin: 2px 0 6px; }
+.beepboxEditor .channelLabels input { min-width: 0;
 }
 
 .beepboxEditor .channelLabels input[type=text] {
@@ -1608,9 +1625,9 @@ li.select2-results__option[role=group] > strong:hover {
 /* narrow screen */
 @media (max-width: 710px) {
 	.beepboxEditor {
-		grid-template-columns: minmax(0, 1fr);
+		grid-template-columns: var(--label-width) minmax(0, 1fr);
 		grid-template-rows: min-content 6px min-content min-content;
-		grid-template-areas: "pattern-area" "." "track-area" "settings-area";
+		grid-template-areas: "channel-labels pattern-area" "channel-labels ." "channel-labels track-area" "settings-area settings-area";
 		grid-row-gap: 0;
 	}
 	.beepboxEditor .settings-area {
