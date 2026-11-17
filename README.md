@@ -21,3 +21,7 @@ The build assembles the editor site in `_site/`. The site Worker can forward ser
 - `worker/` — the site Worker and password gate.
 
 The upstream MIT notice is retained at `goldbox/LICENSE.md`.
+
+## Preset sources
+
+BetaRox includes selected presets adapted from [UltraBox](https://github.com/ultraabox/ultrabox_typescript) and [Slarmoo's Box](https://github.com/slarmoo/slarmoosbox), alongside the GoldBox, JummBox, and BeepBox work described above. Their MIT license notices and contributor credits are documented in the source repositories.
