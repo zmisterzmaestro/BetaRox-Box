@@ -12,6 +12,7 @@ mkdir -p "$OUT/editor" "$OUT/licenses"
 cp -r "$ROOT/site/." "$OUT/"
 cp "$ROOT/goldbox/website/index.html" "$OUT/editor/"
 cp "$ROOT/goldbox/website/beepbox_editor.min.js" "$OUT/editor/"
+cp "$ROOT/goldbox/website/user-assistant.js" "$OUT/editor/"
 for file in favicon.ico apple-touch-icon.png icon_32.png icon_maskable_192.png icon_shadow_192.png icon_windows_150.png browserconfig.xml manifest.webmanifest; do
   [ ! -f "$ROOT/goldbox/website/$file" ] || cp "$ROOT/goldbox/website/$file" "$OUT/editor/"
 done
