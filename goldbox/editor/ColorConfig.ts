@@ -3594,3 +3594,48 @@ export class ColorConfig {
     }
 }
 
+
+/* BetaRox palette identities reuse the editor's established, range-aware palettes. */
+ColorConfig.themes["betarox fern"] = ColorConfig.themes["forest"];
+ColorConfig.themes["betarox coral"] = ColorConfig.themes["roe light"] + `
+:root {
+	--page-margin: #2c1825;
+	--editor-background: #fff7f5;
+	--primary-text: #34212c;
+	--secondary-text: #8a566d;
+	--ui-widget-background: #f0dce4;
+	--ui-widget-focus: #e3c2d0;
+	--pitch-background: #f3e8ef;
+	--tonic: #f4c9c6;
+	--fifth-note: #ead7ed;
+	--track-editor-bg-pitch: #f4e6ed;
+	--track-editor-bg-pitch-dim: #fff7f7;
+	--track-editor-bg-noise: #efe6f0;
+	--track-editor-bg-noise-dim: #fff9f8;
+	--track-editor-bg-mod: #f4e1e4;
+	--track-editor-bg-mod-dim: #fff8f5;
+	--loop-accent: #cc637d;
+	--link-accent: #a43e64;
+	--indicator-primary: #cc637d;
+}`;
+ColorConfig.themes["betarox fossil"] = ColorConfig.themes["beachcombing"] + `
+:root {
+	--page-margin: #12252a;
+	--editor-background: #101f25;
+	--primary-text: #e4eee6;
+	--secondary-text: #8eb0a7;
+	--ui-widget-background: #253e42;
+	--ui-widget-focus: #3d625e;
+	--pitch-background: #20383b;
+	--tonic: #45584a;
+	--fifth-note: #29464a;
+	--track-editor-bg-pitch: #214147;
+	--track-editor-bg-pitch-dim: #132b31;
+	--track-editor-bg-noise: #3c4650;
+	--track-editor-bg-noise-dim: #202c34;
+	--track-editor-bg-mod: #39483d;
+	--track-editor-bg-mod-dim: #202e28;
+	--loop-accent: #e4b76a;
+	--link-accent: #83d5c2;
+	--indicator-primary: #e4b76a;
+}`;
