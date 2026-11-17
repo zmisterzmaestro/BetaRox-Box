@@ -4,7 +4,7 @@ const { runInNewContext } = require("node:vm");
 
 const origin = "http://127.0.0.1:4173";
 const editor = origin + "/editor/";
-const engine = { URL, document: { title: "" } };
+const engine = { URL, document: { title: "" }, navigator: { platform: "Linux", userAgent: "Node" } };
 runInNewContext(readFileSync("goldbox/website/beepbox_synth.js", "utf8"), engine);
 const { Song, Note } = engine.beepbox;
 
