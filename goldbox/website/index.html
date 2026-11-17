@@ -155,6 +155,19 @@
         </noscript>
     </div>
     <div id="text-content">
+        <section id="user-assistant" style="margin:24px 0;padding:16px;border:1px solid #666;border-radius:8px">
+            <h2 style="text-align:left;margin-top:0">BetaRox User Assistant</h2>
+            <p>Ask how to use BetaRox, understand a control, or learn a music-making technique.</p>
+            <p style="font-size:.85em">Powered by Gemini. Your questions and recent chat are sent to Gemini; your song is not. Do not include personal information. Answers may be incorrect.</p>
+            <div id="assistant-messages" role="log" aria-live="polite" style="max-height:320px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere"></div>
+            <form id="assistant-form">
+                <label for="assistant-prompt">Your question</label>
+                <textarea id="assistant-prompt" rows="3" maxlength="500" required placeholder="How do I make a bass line?" style="display:block;box-sizing:border-box;width:100%;margin:8px 0;padding:8px;font:inherit"></textarea>
+                <button id="assistant-send" type="submit">Ask</button>
+                <button id="assistant-clear" type="button">Clear chat</button>
+            </form>
+            <p id="assistant-status" role="status" aria-live="polite"></p>
+        </section>
         <section id="quick-guide">
             <h2>Quick Guide</h2>
             <p><strong>Compose:</strong> Click or tap the note grid to add and remove notes. Drag horizontally to adjust duration; add notes at the same time to form chords. Numbered boxes assign reusable patterns to bars. Duplicate a pattern before making an independent variation.</p>
@@ -206,5 +219,6 @@
             document.getElementById("beepboxEditorContainer").innerHTML = "Sorry, BetaRox doesn't support your browser. Try a recent version of Chrome, Firefox, Edge, Safari, or Opera.";
         }
 </script>
+    <script src="user-assistant.js" defer></script>
 </body>
 </html>
