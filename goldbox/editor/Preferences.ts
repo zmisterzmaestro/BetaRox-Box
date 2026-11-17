@@ -62,7 +62,7 @@ export class Preferences {
 		this.metronomeWhileRecording = window.localStorage.getItem("metronomeWhileRecording") != "false";
 		this.keyboardLayout = window.localStorage.getItem("keyboardLayout") || "wickiHayden";
 		this.layout = window.localStorage.getItem("layout") || "small";
-		this.colorTheme = window.localStorage.getItem("colorTheme") || "dark classic";
+		this.colorTheme = window.localStorage.getItem("colorTheme") || "betarox fern";
 		this.visibleOctaves = ((<any>window.localStorage.getItem("visibleOctaves")) >>> 0) || Preferences.defaultVisibleOctaves;
 		
 		const defaultScale: Scale | undefined = Config.scales.dictionary[window.localStorage.getItem("defaultScale")!];
