@@ -94,13 +94,25 @@ function buildPresetOptions(isNoise: boolean, idSet: string): HTMLSelectElement 
     menu.appendChild(randomGroup);
 
 
+    // Put the two BetaRox sounds directly in the preset menu without duplicating them below.
+    for (let categoryIndex: number = 1; categoryIndex < EditorConfig.presetCategories.length; categoryIndex++) {
+        const category: PresetCategory = EditorConfig.presetCategories[categoryIndex];
+        if (category.name != "BetaRox Drums") continue;
+        for (let presetIndex: number = 0; presetIndex < category.presets.length; presetIndex++) {
+            const preset: Preset = category.presets[presetIndex];
+            if (preset.name.startsWith("BetaRox ") && (preset.isNoise == true) == isNoise) {
+                menu.appendChild(option({ value: (categoryIndex << 6) + presetIndex }, preset.name));
+            }
+        }
+    }
+
     for (let categoryIndex: number = 1; categoryIndex < EditorConfig.presetCategories.length; categoryIndex++) {
         const category: PresetCategory = EditorConfig.presetCategories[categoryIndex];
         const group: HTMLElement = optgroup({ label: category.name + " ▾" });
         let foundAny: boolean = false;
         for (let presetIndex: number = 0; presetIndex < category.presets.length; presetIndex++) {
             const preset: Preset = category.presets[presetIndex];
-            if ((preset.isNoise == true) == isNoise) {
+            if ((preset.isNoise == true) == isNoise && !(category.name == "BetaRox Drums" && preset.name.startsWith("BetaRox "))) {
                 group.appendChild(option({ value: (categoryIndex << 6) + presetIndex }, preset.name));
                 foundAny = true;
             }
