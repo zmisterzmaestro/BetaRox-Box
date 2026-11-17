@@ -727,7 +727,8 @@ export class SongEditor {
         option({ value: "new" }, "+ New Blank Song"),
         option({ value: "import" }, "↑ Import Song... (" + EditorConfig.ctrlSymbol + "O)"),
         option({ value: "export" }, "↓ Export Song... (" + EditorConfig.ctrlSymbol + "S)"),
-        option({ value: "copyUrl" }, "⎘ Copy Song URL"),
+        option({ value: "copyUrl" }, "⎘ Copy BetaRox Song URL"),
+        option({ value: "copyUrlWithoutChannelNames" }, "⎘ Copy URL Without Channel Names"),
         option({ value: "shareUrl" }, "⤳ Share Song URL"),
         option({ value: "shortenUrl" }, "… Shorten Song URL"),
         option({ value: "songRecovery" }, "⚠ Recover Recent Song..."),
@@ -1092,8 +1093,9 @@ export class SongEditor {
         this._loopEditor.container,
     );
     private readonly _trackVisibleArea: HTMLDivElement = div({ style: "position: absolute; width: 100%; height: 100%; pointer-events: none;" });
+    private readonly _trackControls = div({ class: "trackControls" }, this._muteEditor.labels.container, this._muteEditor.container);
     private readonly _trackAndMuteContainer: HTMLDivElement = div({ class: "trackAndMuteContainer" },
-        this._muteEditor.container,
+        this._trackControls,
         this._trackContainer,
         this._trackVisibleArea,
     );
@@ -1866,7 +1868,7 @@ export class SongEditor {
         const prefs: Preferences = this._doc.prefs;
         this._muteEditor.container.style.display = prefs.enableChannelMuting ? "" : "none";
         const trackBounds: DOMRect = this._trackVisibleArea.getBoundingClientRect();
-        this._doc.trackVisibleBars = Math.floor((trackBounds.right - trackBounds.left - (prefs.enableChannelMuting ? 32 : 0)) / this._doc.getBarWidth());
+        this._doc.trackVisibleBars = Math.max(1, Math.floor((trackBounds.width - this._trackControls.offsetWidth) / this._doc.getBarWidth()));
         this._doc.trackVisibleChannels = Math.floor((trackBounds.bottom - trackBounds.top - 30) / this._doc.getChannelHeight());
         for (let i: number = this._doc.song.pitchChannelCount + this._doc.song.noiseChannelCount; i < this._doc.song.channels.length; i++) {
             const channel: Channel = this._doc.song.channels[i];
@@ -3276,8 +3278,8 @@ export class SongEditor {
             return;
         }
 
-        // Defer to actively editing song title, channel name, or mod label
-        if (document.activeElement == this._songTitleInputBox.input || this._patternEditor.editingModLabel || document.activeElement == this._muteEditor._channelNameInput.input) {
+        // Defer to actively editing song title or mod label
+        if (document.activeElement == this._songTitleInputBox.input || this._patternEditor.editingModLabel) {
             // Enter/esc returns focus to form
             if (event.keyCode == 13 || event.keyCode == 27) {
                 this.mainLayer.focus();
@@ -4284,6 +4286,9 @@ export class SongEditor {
                 break;
             case "copyUrl":
                 this._copyTextToClipboard(this._doc.song.toCompatibleUrl(location.href));
+                break;
+            case "copyUrlWithoutChannelNames":
+                this._copyTextToClipboard(this._doc.song.toCompatibleUrl(location.href, false));
                 break;
             case "shareUrl":
                 (<any>navigator).share({ url: this._doc.song.toCompatibleUrl(location.href) });

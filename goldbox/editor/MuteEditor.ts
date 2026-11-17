@@ -3,8 +3,8 @@
 import { SongDocument } from "./SongDocument";
 import { HTML } from "imperative-html/dist/esm/elements-strict";
 import { ColorConfig } from "./ColorConfig";
-import { InputBox } from "./HTMLWrapper";
-import { ChangeChannelOrder, ChangeChannelName, ChangeRemoveChannel } from "./changes";
+import { ChannelNameEditor } from "./ChannelNameEditor";
+import { ChangeChannelOrder, ChangeRemoveChannel } from "./changes";
 import { Config } from "../synth/SynthConfig";
 import { SongEditor } from "./SongEditor";
 
@@ -16,7 +16,7 @@ export class MuteEditor {
 	private readonly _buttons: HTMLDivElement[] = [];
 	private readonly _channelCounts: HTMLDivElement[] = [];
 	private readonly _channelNameDisplay: HTMLDivElement = HTML.div({ style: `background-color: ${ColorConfig.uiWidgetFocus}; white-space:nowrap; display: none; transform:translate(20px); width: auto; pointer-events: none; position: absolute; border-radius: 0.2em; z-index: 2;`, "color": ColorConfig.primaryText }, "");
-	public readonly _channelNameInput: InputBox = new InputBox(HTML.input({ style: `color: ${ColorConfig.primaryText}; background-color: ${ColorConfig.uiWidgetFocus}; margin-top: -2px; display: none; width: 6em; position: absolute; border-radius: 0.2em; z-index: 2;`, "color": ColorConfig.primaryText }, ""), this._doc, (oldValue: string, newValue: string) => new ChangeChannelName(this._doc, oldValue, newValue));
+	public readonly labels = new ChannelNameEditor(this._doc, () => this._editor.refocusStage());
 
 	private readonly _channelDropDown: HTMLSelectElement = HTML.select({ style: "width: 0px; left: 19px; height: 19px; position:absolute; opacity:0" },
 
@@ -29,7 +29,7 @@ export class MuteEditor {
 		HTML.option({ value: "chnDelete" }, "Delete This Channel"),
 	);
 
-	public readonly container: HTMLElement = HTML.div({ class: "muteEditor", style: "position: sticky; padding-top: " + Config.barEditorHeight + "px;" }, this._channelNameDisplay, this._channelNameInput.input, this._channelDropDown);
+	public readonly container: HTMLElement = HTML.div({ class: "muteEditor", style: "padding-top: " + Config.barEditorHeight + "px;" }, this._channelNameDisplay, this._channelDropDown);
 
 	private _editorHeight: number = 128;
 	private _renderedChannelCount: number = 0;
@@ -51,27 +51,6 @@ export class MuteEditor {
 		this._channelDropDown.addEventListener("mousedown", this._channelDropDownGetOpenedPosition);
 		this._channelDropDown.addEventListener("blur", this._channelDropDownBlur);
 		this._channelDropDown.addEventListener("click", this._channelDropDownClick);
-
-		this._channelNameInput.input.addEventListener("change", this._channelNameInputHide);
-		this._channelNameInput.input.addEventListener("blur", this._channelNameInputHide);
-		this._channelNameInput.input.addEventListener("mousedown", this._channelNameInputClicked);
-		this._channelNameInput.input.addEventListener("input", this._channelNameInputWhenInput);
-	}
-
-	private _channelNameInputWhenInput = (): void => {
-		let newValue = this._channelNameInput.input.value;
-		if (newValue.length > 15) {
-			this._channelNameInput.input.value = newValue.substring(0, 15);
-		}
-	}
-
-	private _channelNameInputClicked = (event: MouseEvent): void => {
-		event.stopPropagation();
-	}
-
-	private _channelNameInputHide = (): void => {
-		this._channelNameInput.input.style.setProperty("display", "none");
-		this._channelNameDisplay.style.setProperty("display", "none");
 	}
 
 	private _channelDropDownClick = (event: MouseEvent): void => {
@@ -89,9 +68,6 @@ export class MuteEditor {
 	private _channelDropDownGetOpenedPosition = (event: MouseEvent): void => {
 
 		this._channelDropDownLastState = this._channelDropDownOpen;
-
-		this._channelDropDownChannel = Math.floor(Math.min(this._renderedChannelCount, Math.max(0, parseInt(this._channelDropDown.style.getPropertyValue("top")) / this._renderedChannelHeight)));
-		this._doc.muteEditorChannel = this._channelDropDownChannel;
 
 		this._channelNameDisplay.style.setProperty("display", "");
 
@@ -137,15 +113,7 @@ export class MuteEditor {
 
 		switch (this._channelDropDown.value) {
 			case "rename":
-				this._channelNameInput.input.style.setProperty("display", "");
-				this._channelNameInput.input.style.setProperty("transform", this._channelNameDisplay.style.getPropertyValue("transform"));
-				if (this._channelNameDisplay.textContent != null) {
-					this._channelNameInput.input.value = this._channelNameDisplay.textContent;
-				}
-				else {
-					this._channelNameInput.input.value = "";
-				}
-				this._channelNameInput.input.select();
+				this.labels.focus(this._channelDropDownChannel);
 				break;
 			case "chnUp":
 				this._doc.record(new ChangeChannelOrder(this._doc, this._channelDropDownChannel, this._channelDropDownChannel, -1));
@@ -222,6 +190,7 @@ export class MuteEditor {
 		if (xPos >= 21.0) {
 			if (!this._channelDropDownOpen) {
 				// Mouse over chn. number
+				this._channelDropDownChannel = index;
 				this._channelDropDown.style.setProperty("display", "");
 				var height = this._doc.getChannelHeight();
 				this._channelNameDisplay.style.setProperty("transform", "translate(20px, " + (height / 4 + height * index) + "px)");
@@ -281,6 +250,7 @@ export class MuteEditor {
 	}
 
 	public render(): void {
+		this.labels.render();
 		if (!this._doc.prefs.enableChannelMuting) return;
 		
 		const channelHeight = this._doc.getChannelHeight();
@@ -383,18 +353,15 @@ export class MuteEditor {
 			if (this._renderedChannelHeight < 27) {
 				this._channelNameDisplay.style.setProperty("margin-top", "-2px");
 				this._channelDropDown.style.setProperty("margin-top", "-4px");
-				this._channelNameInput.input.style.setProperty("margin-top", "-4px");
 
 			}
 			else if (this._renderedChannelHeight < 30) {
 				this._channelNameDisplay.style.setProperty("margin-top", "-1px");
 				this._channelDropDown.style.setProperty("margin-top", "-3px");
-				this._channelNameInput.input.style.setProperty("margin-top", "-3px");
 			}
 			else {
 				this._channelNameDisplay.style.setProperty("margin-top", "0px");
 				this._channelDropDown.style.setProperty("margin-top", "0px");
-				this._channelNameInput.input.style.setProperty("margin-top", "-2px");
 			}
 		}
 	}

@@ -1398,6 +1398,7 @@ export class ChangeChannelOrder extends Change {
             }
         }
 
+        doc.recalcChannelNames = true;
         doc.notifier.changed();
         this._didSomething();
 
@@ -3309,6 +3310,7 @@ export class ChangeSong extends ChangeGroup {
         doc.synth.clearTemporaryLoop();
         doc.synth.heldMods = [];
         doc.song.fromBase64String(newHash);
+        doc.recalcChannelNames = true;
         if (pitchChannelCount != doc.song.pitchChannelCount || noiseChannelCount != doc.song.noiseChannelCount || modChannelCount != doc.song.modChannelCount) {
             ColorConfig.resetColors();
         }
@@ -4088,17 +4090,17 @@ export class ChangeSongTitle extends Change {
 }
 
 export class ChangeChannelName extends Change {
-    constructor(doc: SongDocument, oldValue: string, newValue: string) {
+    constructor(doc: SongDocument, channel: Channel, value: string) {
         super();
-        if (newValue.length > 15) {
-            newValue = newValue.substring(0, 15);
-        }
-
-        doc.song.channels[doc.muteEditorChannel].name = newValue;
+        // Avoid leaving half of a Unicode character at the input length limit.
+        const name = Array.from(value.slice(0, Channel.nameLengthMax)).filter(character =>
+            character.length === 2 || !/[\uD800-\uDFFF]/.test(character)
+        ).join("").trim();
+        if (channel.name === name) return;
+        channel.name = name;
         doc.recalcChannelNames = true;
-
         doc.notifier.changed();
-        if (oldValue != newValue) this._didSomething();
+        this._didSomething();
     }
 }
 

@@ -1,0 +1,19 @@
+name: Channel naming
+on: [pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  editor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run setup && npm run build
+      - run: npm install --no-save --package-lock=false @playwright/test@1.56.1 jquery@3.4.1 select2@4.0.7
+      - run: npx playwright install --with-deps chromium
+      - name: Test channel names in the built editor
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory _site &
+          npx playwright test tests/channel-names.spec.cjs --reporter=line --workers=1

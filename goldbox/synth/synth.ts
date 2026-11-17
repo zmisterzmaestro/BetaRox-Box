@@ -2423,6 +2423,7 @@ export class Instrument {
 }
 
 export class Channel {
+    public static readonly nameLengthMax = 40;
     public octave: number = 0;
     public readonly instruments: Instrument[] = [];
     public readonly patterns: Pattern[] = [];
@@ -2671,36 +2672,56 @@ public getTunedFrequencyFromPitch(pitch: number): number {
         }
     }
 
-    // Public URLs keep the GoldBox payload unchanged; unaware editors ignore the query.
-    public toCompatibleUrl(baseUrl: string): string {
+    // Keep BetaRox metadata outside the shared GoldBox payload.
+    public toCompatibleUrl(baseUrl: string, includeChannelNames: boolean = true): string {
         const url: URL = new URL(baseUrl);
         url.searchParams.delete("betaroxTuning");
+        url.searchParams.delete("bn");
         if (this.pitchesPerOctave == 12 && (this.temperament != 0 || this.referenceA4Hz != 440)) {
             url.searchParams.set("betaroxTuning", "1," + this.temperament + "," + this.referenceA4Hz);
         }
-        url.hash = this.toBase64String(false);
+        if (includeChannelNames && this.channels.some(channel => channel.name !== "")) {
+            url.searchParams.set("bn", JSON.stringify(this.channels.map(channel => channel.name)));
+        }
+        url.hash = this.toBase64String(false, false);
         return url.href;
+    }
+
+    private static _readChannelNames(raw: string | null): string[] | null {
+        if (!raw) return null;
+        try {
+            const names: unknown = JSON.parse(raw);
+            const maxChannels = Config.pitchChannelCountMax + Config.noiseChannelCountMax + Config.modChannelCountMax;
+            // Native GoldBox also supports imported names longer than the editor's input limit.
+            // Two base64 characters encode the length of each percent-encoded name.
+            if (Array.isArray(names) && names.length <= maxChannels &&
+                names.every(name => typeof name === "string" && encodeURIComponent(name).length <= 0xfff)) return names;
+        } catch (_) {
+            // A malformed optional label must not prevent the music from opening.
+        }
+        return null;
     }
 
     public static songStringFromUrl(href: string): string {
         const url: URL = new URL(href);
         if (!url.hash) return "";
-        // Legacy B links already contain their tuning and take precedence.
-        if (url.hash.substring(1, 2) != "g") return url.hash;
-        const metadata: string | null = url.searchParams.get("betaroxTuning");
-        if (metadata == null) return url.hash;
-        const parts: string[] = metadata.split(",");
-        if (parts.length != 3 || parts[0] != "1" || !/^[0-9]+$/.test(parts[1]) || !/^[0-9]+$/.test(parts[2])) return url.hash;
-        const temperament: number = Number(parts[1]);
-        const reference: number = Number(parts[2]);
-        if (temperament >= Config.temperaments.length || reference < 380 || reference > 480) return url.hash;
+        const names = Song._readChannelNames(url.searchParams.get("bn"));
+        // Legacy B and 14-TET links already embed their tuning.
+        const tuning = url.hash.charAt(1) === "g" && /^1,([0-9]+),([0-9]+)$/.exec(url.searchParams.get("betaroxTuning") || "");
+        const hasTuning = tuning && Number(tuning[1]) < Config.temperaments.length && Number(tuning[2]) >= 380 && Number(tuning[2]) <= 480;
+        if (!names && !hasTuning) return url.hash;
         const song: Song = new Song(url.hash);
-        song.temperament = temperament;
-        song.referenceA4Hz = reference;
+        if (tuning && hasTuning) {
+            song.temperament = Number(tuning[1]);
+            song.referenceA4Hz = Number(tuning[2]);
+        }
+        if (names) {
+            for (let i = 0; i < Math.min(names.length, song.getChannelCount()); i++) song.channels[i].name = names[i];
+        }
         return song.toBase64String();
     }
 
-    public toBase64String(includeTuning: boolean = true): string {
+    public toBase64String(includeTuning: boolean = true, includeChannelNames: boolean = true): string {
         let bits: BitFieldWriter;
         let buffer: number[] = [];
 
@@ -2753,7 +2774,7 @@ public getTunedFrequencyFromPitch(pitch: number): number {
         buffer.push(SongTagCode.channelNames);
         for (let channel: number = 0; channel < this.getChannelCount(); channel++) {
             // Length of the channel name string
-            var encodedChannelName: string = encodeURIComponent(this.channels[channel].name);
+            const encodedChannelName: string = includeChannelNames ? encodeURIComponent(this.channels[channel].name) : "";
             buffer.push(base64IntToCharCode[encodedChannelName.length >> 6], base64IntToCharCode[encodedChannelName.length & 0x3f]);
 
             // Actual encoded string follows

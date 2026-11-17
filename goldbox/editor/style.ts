@@ -1327,16 +1327,43 @@ document.head.appendChild(HTML.style({ type: "text/css" }, `
 	position: relative;
 }
 
+.beepboxEditor .trackControls {
+	display: flex;
+	flex: 0 0 auto;
+	position: sticky;
+	left: 0;
+	z-index: 1;
+	background: ${ColorConfig.editorBackground};
+}
+
+.beepboxEditor .channelLabels {
+	width: clamp(64px, 12vw, 104px);
+}
+
+.beepboxEditor .channelLabels input[type=text] {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	height: var(--channel-row-height);
+	margin: 0;
+	padding: 0 4px;
+	font-size: 0.85em;
+	text-align: left;
+	text-overflow: ellipsis;
+}
+
+.beepboxEditor .channelLabels input:focus-visible {
+	outline: 2px solid ${ColorConfig.primaryText};
+	outline-offset: -2px;
+}
+
 .beepboxEditor .muteEditor {
 	width: 32px;
 	flex-shrink: 0;
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
-	position: sticky;
-	left: 0;
-	z-index: 1;
-	background: ${ColorConfig.editorBackground};
+	position: relative;
 }
 
 .beepboxEditor .selectRow, .beepboxEditor .instrumentCopyPasteRow {

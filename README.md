@@ -2,6 +2,12 @@
 
 BetaRox is a standalone browser-based music editor in the BeepBox family. It builds on the open-source work of GoldBox, JummBox, and BeepBox, including John Nesky's original project.
 
+## Channel names
+
+Click or tap **Channel name** beside a track. Press Enter or tap elsewhere to save, or Escape to cancel. Labels stay with their channels when reordered and are included in native JSON exports.
+
+**File → Copy BetaRox Song URL** includes labels. **File → Copy URL Without Channel Names** shares the same music and tuning with blank labels.
+
 ## Develop
 
 Requires Node.js.
