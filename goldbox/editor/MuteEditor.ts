@@ -104,11 +104,10 @@ export class MuteEditor {
 		}
 	}
 
-	private _channelDropDownHandler = (event: Event): void => {
+	private _channelDropDownHandler = (): void => {
 		this._channelNameDisplay.style.setProperty("display", "none");
 		this._channelDropDown.style.setProperty("display", "none");
 		this._channelDropDownOpen = false;
-		event.stopPropagation();
 		//console.log("handler " + this._channelDropDownOpen);
 
 		switch (this._channelDropDown.value) {

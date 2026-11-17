@@ -102,3 +102,12 @@ test("channel names survive editing, reordering, undo, sharing and reopening", a
     await page.reload();
     await expect(labels.nth(1)).toHaveValue(lead);
 });
+
+test("loading older songs clears labels from the previous song", () => {
+    const song = new Song();
+    const emptyNameTag = "U" + "00".repeat(song.getChannelCount());
+    const olderPayload = song.toBase64String().replace(emptyNameTag, "");
+    song.channels[0].name = "Previous song";
+    song.fromBase64String(olderPayload);
+    expect(song.channels[0].name).toBe("");
+});

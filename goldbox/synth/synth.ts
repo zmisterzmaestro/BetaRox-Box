@@ -2633,6 +2633,8 @@ public getTunedFrequencyFromPitch(pitch: number): number {
         this.title = "Unnamed";
         document.title = EditorConfig.versionDisplayName;
 
+        // Older song formats can omit the channel-name tag when reusing this Song.
+        for (const channel of this.channels) channel.name = "";
         if (andResetChannels) {
             this.pitchChannelCount = 3;
             this.noiseChannelCount = 1;
