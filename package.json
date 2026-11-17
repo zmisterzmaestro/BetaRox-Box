@@ -1,0 +1,11 @@
+{
+  "name": "betarox-box",
+  "private": true,
+  "description": "BetaRox standalone music editor.",
+  "scripts": {
+    "setup": "npm ci --prefix goldbox",
+    "build": "bash ./scripts/build-site.sh",
+    "dev": "npm run build",
+    "preview": "npx --yes http-server _site -p 8080 -c-1"
+  }
+}

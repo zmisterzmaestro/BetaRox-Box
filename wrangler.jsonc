@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "betarox-box",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "main": "./worker/index.js",
+  "build": { "command": "npm run setup && npm run build" },
+  "ratelimits": [
+    { "name": "LOOP_USER_LIMIT", "namespace_id": "2026111601", "simple": { "limit": 4, "period": 60 } }
+  ],
+  "services": [
+    { "binding": "BETASOUNDLABS", "service": "betasoundlabs" }
+  ],
+  "assets": {
+    "directory": "./_site",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  }
+}

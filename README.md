@@ -12,12 +12,12 @@ npm run build
 npm run preview
 ```
 
-The build assembles the editor site in `_site/`. Cloudflare deployment settings are kept separate from the source; do not add API keys or passwords to this repository.
+The build assembles the editor site in `_site/`. The site Worker can forward server-side API requests to the separate BetaSoundLabs service through a Cloudflare Service Binding. API implementation and credentials do not belong in this repository.
 
 ## Project layout
 
 - `goldbox/` — the editor and synthesizer source used by BetaRox.
 - `site/` — the BetaRox landing page and acknowledgments.
-- `worker/` — the site Worker and its private API service connection.
+- `worker/` — the site Worker and password gate.
 
-BetaRox's server-side AI and sound experiment code lives in the private `betasoundlabs` repository. The editor's license and upstream notices are retained with the source.
+The upstream MIT notice is retained at `goldbox/LICENSE.md`.
