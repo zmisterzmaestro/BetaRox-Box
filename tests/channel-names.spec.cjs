@@ -27,7 +27,8 @@ test("channel names survive editing, reordering, undo, sharing and reopening", a
     const lead = "Tenor 🎷 & bass";
     const expectedNames = () => JSON.parse(new URL(page.url()).searchParams.get("bn") || "[]");
 
-    await expect(labels.first()).toBeVisible();
+    await labels.first().click();
+    await expect(labels.first()).toBeFocused();
     await labels.first().fill(lead);
     await labels.first().press("Enter");
     await expect.poll(() => expectedNames()[0]).toBe(lead);
@@ -40,7 +41,12 @@ test("channel names survive editing, reordering, undo, sharing and reopening", a
 
     await menu("enableChannelMuting").selectOption("enableChannelMuting");
     const firstMuteRow = page.locator(".muteEditor .mute-button").first().locator("..");
-    await firstMuteRow.hover({ position: { x: 26, y: 10 } });
+    await firstMuteRow.scrollIntoViewIfNeeded();
+    const row = await firstMuteRow.boundingBox();
+    const middle = row.y + row.height / 2;
+    // The transparent channel menu becomes the pointer target when the number is hovered.
+    await page.mouse.move(row.x + 5, middle);
+    await page.mouse.move(row.x + 26, middle);
     await menu("chnDown").selectOption("chnDown");
     await expect.poll(() => expectedNames()[1]).toBe(lead);
     await expect(labels.first()).toHaveValue("");
@@ -86,5 +92,13 @@ test("channel names survive editing, reordering, undo, sharing and reopening", a
     await labels.nth(1).press("Enter");
     await expect.poll(() => expectedNames()[1]).toBe("");
     await menu("undo").selectOption("undo");
+    await expect(labels.nth(1)).toHaveValue(lead);
+
+    await menu("displayBrowserUrl").selectOption("displayBrowserUrl");
+    await expect.poll(() => new URL(page.url()).hash).toBe("");
+    await expect.poll(() => new URL(page.url()).searchParams.has("bn")).toBe(false);
+    const hiddenModeLink = await copySong("copyUrl");
+    expect(JSON.parse(hiddenModeLink.searchParams.get("bn"))[1]).toBe(lead);
+    await page.reload();
     await expect(labels.nth(1)).toHaveValue(lead);
 });

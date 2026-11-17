@@ -34,6 +34,7 @@ export class BarScrollBar {
 	private _dragStart: number;
 	private _notchSpace: number;
 	private _renderedNotchCount: number = -1;
+	private _renderedVisibleBars: number = -1;
 	private _renderedScrollBarPos: number = -1;
 	
 	constructor(private _doc: SongDocument, private _trackContainer: HTMLDivElement) {
@@ -213,9 +214,10 @@ export class BarScrollBar {
 	public render(): void {
 			this._notchSpace = (this._editorWidth-1) / Math.max(this._doc.trackVisibleBars, this._doc.song.barCount);
 			
-		const resized: boolean = this._renderedNotchCount != this._doc.song.barCount;
+		const resized: boolean = this._renderedNotchCount != this._doc.song.barCount || this._renderedVisibleBars != this._doc.trackVisibleBars;
 		if (resized) {
 			this._renderedNotchCount = this._doc.song.barCount;
+			this._renderedVisibleBars = this._doc.trackVisibleBars;
 				
 			while (this._notches.firstChild) this._notches.removeChild(this._notches.firstChild);
 				
