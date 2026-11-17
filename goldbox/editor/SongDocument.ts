@@ -32,7 +32,6 @@ export class SongDocument {
 	public readonly selection: Selection = new Selection(this);
 	public readonly prefs: Preferences = new Preferences();
 	public channel: number = 0;
-	public muteEditorChannel: number = 0;
 	public bar: number = 0;
 	public recalcChannelNames: boolean;
 	public recentPatternInstruments: number[][] = [];
