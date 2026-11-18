@@ -285,7 +285,7 @@ export class Layout {
 					--br-song-options-width: clamp(220px, 20vw, 280px);
 					width: 100%;
 					height: 100vh;
-					grid-template-columns: var(--br-song-options-width) minmax(0, 1fr) minmax(300px, 30em);
+					grid-template-columns: var(--br-song-options-width) minmax(0, 1fr) clamp(280px, 25vw, 360px);
 					grid-template-rows: auto auto auto minmax(0, 1fr) min-content;
 					grid-template-areas:
 						"version-area pattern-area instrument-settings-area"
@@ -345,8 +345,16 @@ export class Layout {
 					overflow-y: auto;
 				}
 				.beepboxEditor .instrument-settings-area > .editor-controls {
-					position: absolute;
+					position: relative;
 					width: 100%;
+				}
+				.beepboxEditor .instrument-settings-area .selectRow,
+				.beepboxEditor .instrument-settings-area .instrumentCopyPasteRow {
+					margin-top: 1px;
+					margin-bottom: 1px;
+				}
+				.beepboxEditor .channelLabels input[type=text] {
+					text-align: right;
 				}
 				.beepboxEditor .barScrollBar {
 					display: none;
