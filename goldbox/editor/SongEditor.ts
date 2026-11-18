@@ -3805,24 +3805,36 @@ export class SongEditor {
     }
 
     private _copyTextToClipboard(text: string): void {
-        // Set as any to allow compilation without clipboard types (since, uh, I didn't write this bit and don't know the proper types library) -jummbus
-        let nav: any;
-        nav = navigator;
+        // Copy synchronously while the File menu change still has user activation.
+        // Some browsers reject an asynchronous clipboard request after the menu closes.
+        const textField: HTMLTextAreaElement = document.createElement("textarea");
+        textField.value = text;
+        textField.style.position = "fixed";
+        textField.style.left = "0";
+        textField.style.top = "0";
+        document.body.appendChild(textField);
+        textField.focus();
+        textField.select();
+        textField.setSelectionRange(0, text.length);
+        let succeeded: boolean = false;
+        try {
+            succeeded = document.execCommand("copy");
+        } catch (_) {
+            // Continue to the Clipboard API or the manual-copy dialog.
+        } finally {
+            textField.remove();
+            this.refocusStage();
+        }
+        if (succeeded) return;
 
+        const nav: any = navigator;
         if (nav.clipboard && nav.clipboard.writeText) {
             nav.clipboard.writeText(text).catch(() => {
-                window.prompt("Copy to clipboard:", text);
+                window.prompt("Automatic copy failed. Select the URL and copy it manually:", text);
             });
-            return;
+        } else {
+            window.prompt("Automatic copy failed. Select the URL and copy it manually:", text);
         }
-        const textField: HTMLTextAreaElement = document.createElement("textarea");
-        textField.textContent = text;
-        document.body.appendChild(textField);
-        textField.select();
-        const succeeded: boolean = document.execCommand("copy");
-        textField.remove();
-        this.refocusStage();
-        if (!succeeded) window.prompt("Copy this:", text);
     }
 
     private _whenPrevBarPressed = (): void => {
