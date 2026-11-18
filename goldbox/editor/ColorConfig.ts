@@ -3595,47 +3595,55 @@ export class ColorConfig {
 }
 
 
-/* BetaRox palette identities reuse the editor's established, range-aware palettes. */
-ColorConfig.themes["betarox fern"] = ColorConfig.themes["forest"];
-ColorConfig.themes["betarox coral"] = ColorConfig.themes["roe light"] + `
+/* Keep BetaRox's identity focused in one dark default; leave the other themes intact. */
+ColorConfig.themes["betarox fern"] = ColorConfig.themes["forest"] + `
 :root {
-	--page-margin: #2c1825;
-	--editor-background: #fff7f5;
-	--primary-text: #34212c;
-	--secondary-text: #8a566d;
-	--ui-widget-background: #f0dce4;
-	--ui-widget-focus: #e3c2d0;
-	--pitch-background: #f3e8ef;
-	--tonic: #f4c9c6;
-	--fifth-note: #ead7ed;
-	--track-editor-bg-pitch: #f4e6ed;
-	--track-editor-bg-pitch-dim: #fff7f7;
-	--track-editor-bg-noise: #efe6f0;
-	--track-editor-bg-noise-dim: #fff9f8;
-	--track-editor-bg-mod: #f4e1e4;
-	--track-editor-bg-mod-dim: #fff8f5;
-	--loop-accent: #cc637d;
-	--link-accent: #a43e64;
-	--indicator-primary: #cc637d;
+	/* Evenly space ten channel colors instead of cycling back to near-matches. */
+	--pitch-secondary-channel-hue: 20;
+	--pitch-secondary-channel-hue-scale: 4;
+	--pitch-secondary-channel-sat: 82;
+	--pitch-secondary-channel-sat-scale: 0;
+	--pitch-secondary-channel-lum: 49;
+	--pitch-secondary-channel-lum-scale: 0;
+	--pitch-primary-channel-hue: 20;
+	--pitch-primary-channel-hue-scale: 4;
+	--pitch-primary-channel-sat: 98;
+	--pitch-primary-channel-sat-scale: 0;
+	--pitch-primary-channel-lum: 68;
+	--pitch-primary-channel-lum-scale: 0;
+	--pitch-secondary-note-hue: 20;
+	--pitch-secondary-note-hue-scale: 4;
+	--pitch-secondary-note-sat: 92;
+	--pitch-secondary-note-sat-scale: 0;
+	--pitch-secondary-note-lum: 34;
+	--pitch-secondary-note-lum-scale: 0;
+	--pitch-primary-note-hue: 20;
+	--pitch-primary-note-hue-scale: 4;
+	--pitch-primary-note-sat: 100;
+	--pitch-primary-note-sat-scale: 0;
+	--pitch-primary-note-lum: 84;
+	--pitch-primary-note-lum-scale: 0;
+	--noise-secondary-channel-hue-scale: 2.4;
+	--noise-secondary-channel-sat: 68;
+	--noise-secondary-channel-lum: 42;
+	--noise-primary-channel-hue-scale: 2.4;
+	--noise-primary-channel-sat: 78;
+	--noise-primary-channel-lum: 70;
+	--noise-secondary-note-hue-scale: 2.4;
+	--noise-secondary-note-sat: 78;
+	--noise-secondary-note-lum: 36;
+	--noise-primary-note-hue-scale: 2.4;
+	--noise-primary-note-sat: 88;
+	--noise-primary-note-lum: 82;
+	--mod-secondary-channel-sat: 72;
+	--mod-secondary-channel-lum: 54;
+	--mod-primary-channel-sat: 88;
+	--mod-primary-channel-lum: 76;
+	--mod-secondary-note-sat: 84;
+	--mod-secondary-note-lum: 45;
+	--mod-primary-note-sat: 94;
+	--mod-primary-note-lum: 84;
 }`;
-ColorConfig.themes["betarox fossil"] = ColorConfig.themes["beachcombing"] + `
-:root {
-	--page-margin: #12252a;
-	--editor-background: #101f25;
-	--primary-text: #e4eee6;
-	--secondary-text: #8eb0a7;
-	--ui-widget-background: #253e42;
-	--ui-widget-focus: #3d625e;
-	--pitch-background: #20383b;
-	--tonic: #45584a;
-	--fifth-note: #29464a;
-	--track-editor-bg-pitch: #214147;
-	--track-editor-bg-pitch-dim: #132b31;
-	--track-editor-bg-noise: #3c4650;
-	--track-editor-bg-noise-dim: #202c34;
-	--track-editor-bg-mod: #39483d;
-	--track-editor-bg-mod-dim: #202e28;
-	--loop-accent: #e4b76a;
-	--link-accent: #83d5c2;
-	--indicator-primary: #e4b76a;
-}`;
+// Older local theme selections should resolve to the refreshed default.
+ColorConfig.themes["betarox coral"] = ColorConfig.themes["betarox fern"];
+ColorConfig.themes["betarox fossil"] = ColorConfig.themes["betarox fern"];
