@@ -3819,6 +3819,8 @@ export class SongEditor {
         let succeeded: boolean = false;
         try {
             succeeded = document.execCommand("copy");
+        } catch (_) {
+            // Continue to the Clipboard API or the manual-copy dialog.
         } finally {
             textField.remove();
             this.refocusStage();
