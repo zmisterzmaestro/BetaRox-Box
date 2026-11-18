@@ -282,10 +282,10 @@ export class Layout {
 					height: 100vh;
 				}
 				.beepboxEditor {
-					--br-song-options-width: clamp(220px, 20vw, 280px);
+					--br-side-panel-width: 280px;
 					width: 100%;
 					height: 100vh;
-					grid-template-columns: var(--br-song-options-width) minmax(0, 1fr) clamp(280px, 25vw, 360px);
+					grid-template-columns: var(--br-side-panel-width) minmax(0, 1fr) var(--br-side-panel-width);
 					grid-template-rows: auto auto auto minmax(0, 1fr) min-content;
 					grid-template-areas:
 						"version-area pattern-area instrument-settings-area"
@@ -304,22 +304,48 @@ export class Layout {
 				.beepboxEditor .song-settings-area {
 					min-width: 0;
 					width: auto;
+					box-sizing: border-box;
+					padding-right: 10px;
+					padding-left: 10px;
+					border-right: 1px solid ${ColorConfig.uiWidgetBackground};
+					border-left: 1px solid ${ColorConfig.uiWidgetBackground};
+				}
+				.beepboxEditor .version-area {
+					border-top: 1px solid ${ColorConfig.uiWidgetBackground};
 				}
 				.beepboxEditor .song-settings-area {
 					min-height: 0;
 					overflow-y: auto;
+					border-bottom: 1px solid ${ColorConfig.uiWidgetBackground};
 				}
 				.beepboxEditor .pattern-area {
+					box-sizing: border-box;
 					width: 100%;
 					height: 100%;
 					min-width: 0;
 					min-height: 481px;
+					padding: 8px;
+					border: 1px solid ${ColorConfig.uiWidgetBackground};
 				}
 				.beepboxEditor .track-area {
+					box-sizing: border-box;
 					width: 100%;
 					min-width: 0;
 					display: flex;
 					flex-direction: column;
+					position: relative;
+					border-right: 1px solid ${ColorConfig.uiWidgetBackground};
+					border-bottom: 1px solid ${ColorConfig.uiWidgetBackground};
+					border-left: 1px solid ${ColorConfig.uiWidgetBackground};
+				}
+				.beepboxEditor .track-area::before {
+					content: "";
+					position: absolute;
+					top: 0;
+					bottom: 0;
+					left: var(--br-side-panel-width);
+					border-left: 1px solid ${ColorConfig.uiWidgetBackground};
+					pointer-events: none;
 				}
 				.beepboxEditor .trackAndMuteContainer {
 					width: 100%;
@@ -329,9 +355,12 @@ export class Layout {
 					max-height: 97.5vh;
 				}
 				.beepboxEditor .trackControls {
-					width: var(--br-song-options-width);
-					flex-basis: var(--br-song-options-width);
+					width: var(--br-side-panel-width);
+					flex-basis: var(--br-side-panel-width);
 					box-sizing: border-box;
+				}
+				.beepboxEditor .channelLabels {
+					width: calc(var(--br-side-panel-width) - 49px);
 				}
 				.beepboxEditor .trackContainer {
 					min-width: 0;
@@ -339,10 +368,13 @@ export class Layout {
 					overflow: visible;
 				}
 				.beepboxEditor .instrument-settings-area {
+					box-sizing: border-box;
 					min-width: 0;
 					width: auto;
 					position: relative;
 					overflow-y: auto;
+					padding: 8px;
+					border: 1px solid ${ColorConfig.uiWidgetBackground};
 				}
 				.beepboxEditor .instrument-settings-area > .editor-controls {
 					position: relative;
