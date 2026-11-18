@@ -282,7 +282,7 @@ export class Layout {
 					height: 100vh;
 				}
 				.beepboxEditor {
-					--br-side-panel-width: 280px;
+					--br-side-panel-width: var(--settings-area-width);
 					width: 100%;
 					height: 100vh;
 					grid-template-columns: var(--br-side-panel-width) minmax(0, 1fr) var(--br-side-panel-width);
