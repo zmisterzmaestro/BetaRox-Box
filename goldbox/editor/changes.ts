@@ -4218,7 +4218,7 @@ export class ChangeAddEnvelope extends Change {
     constructor(doc: SongDocument) {
         super();
         const instrument: Instrument = doc.song.channels[doc.channel].instruments[doc.getCurrentInstrument()];
-        instrument.addEnvelope(0, 0, 0);
+        instrument.addEnvelope(0, 0, 0, true);
         instrument.preset = instrument.type;
         doc.notifier.changed();
         this._didSomething();
@@ -4234,6 +4234,16 @@ export class ChangeRemoveEnvelope extends Change {
             instrument.envelopes[i].target = instrument.envelopes[i + 1].target;
             instrument.envelopes[i].index = instrument.envelopes[i + 1].index;
             instrument.envelopes[i].envelope = instrument.envelopes[i + 1].envelope;
+            instrument.envelopes[i].pitchEnvelopeStart = instrument.envelopes[i + 1].pitchEnvelopeStart;
+            instrument.envelopes[i].pitchEnvelopeEnd = instrument.envelopes[i + 1].pitchEnvelopeEnd;
+            instrument.envelopes[i].inverse = instrument.envelopes[i + 1].inverse;
+            instrument.envelopes[i].perEnvelopeSpeed = instrument.envelopes[i + 1].perEnvelopeSpeed;
+            instrument.envelopes[i].perEnvelopeLowerBound = instrument.envelopes[i + 1].perEnvelopeLowerBound;
+            instrument.envelopes[i].perEnvelopeUpperBound = instrument.envelopes[i + 1].perEnvelopeUpperBound;
+            instrument.envelopes[i].steps = instrument.envelopes[i + 1].steps;
+            instrument.envelopes[i].seed = instrument.envelopes[i + 1].seed;
+            instrument.envelopes[i].waveform = instrument.envelopes[i + 1].waveform;
+            instrument.envelopes[i].discrete = instrument.envelopes[i + 1].discrete;
         }
         // TODO: Shift any envelopes that were targeting other envelope indices after the removed one.
         instrument.preset = instrument.type;
@@ -4265,10 +4275,82 @@ export class ChangeSetEnvelopeType extends Change {
         const oldValue: number = instrument.envelopes[envelopeIndex].envelope;
         if (oldValue != newValue) {
             instrument.envelopes[envelopeIndex].envelope = newValue;
+            instrument.envelopes[envelopeIndex].perEnvelopeSpeed = Config.newEnvelopes[newValue].speed;
             instrument.preset = instrument.type;
             doc.notifier.changed();
             this._didSomething();
         }
+    }
+}
+
+export class ChangeEnvelopePitchStart extends Change {
+    constructor(doc: SongDocument, oldValue: number, value: number, index: number) {
+        super(); const e = doc.song.channels[doc.channel].instruments[doc.getCurrentInstrument()].envelopes[index];
+        e.pitchEnvelopeStart = value; if (oldValue != value) { doc.notifier.changed(); this._didSomething(); }
+    }
+}
+export class ChangeEnvelopePitchEnd extends Change {
+    constructor(doc: SongDocument, oldValue: number, value: number, index: number) {
+        super(); const e = doc.song.channels[doc.channel].instruments[doc.getCurrentInstrument()].envelopes[index];
+        e.pitchEnvelopeEnd = value; if (oldValue != value) { doc.notifier.changed(); this._didSomething(); }
+    }
+}
+export class ChangeEnvelopeInverse extends Change {
+    constructor(doc: SongDocument, value: boolean, index: number) {
+        super(); const e = doc.song.channels[doc.channel].instruments[doc.getCurrentInstrument()].envelopes[index];
+        const old = e.inverse; e.inverse = value; if (old != value) { doc.notifier.changed(); this._didSomething(); }
+    }
+}
+export class ChangeDiscreteEnvelope extends Change {
+    constructor(doc: SongDocument, value: boolean, index: number) {
+        super(); const e = doc.song.channels[doc.channel].instruments[doc.getCurrentInstrument()].envelopes[index];
+        const old = e.discrete; e.discrete = value; if (old != value) { doc.notifier.changed(); this._didSomething(); }
+    }
+}
+export class ChangePerEnvelopeSpeed extends Change {
+    constructor(doc: SongDocument, oldValue: number, value: number, index: number) {
+        super(); const e = doc.song.channels[doc.channel].instruments[doc.getCurrentInstrument()].envelopes[index];
+        e.perEnvelopeSpeed = value; if (oldValue != value) { doc.notifier.changed(); this._didSomething(); }
+    }
+}
+export class ChangeEnvelopeLowerBound extends Change {
+    constructor(doc: SongDocument, oldValue: number, value: number, index: number) {
+        super(); const e = doc.song.channels[doc.channel].instruments[doc.getCurrentInstrument()].envelopes[index];
+        value = Math.max(Config.perEnvelopeBoundMin, Math.min(Config.perEnvelopeBoundMax, Math.round(value * 10) / 10));
+        e.perEnvelopeLowerBound = value; if (oldValue != value) { doc.notifier.changed(); this._didSomething(); }
+    }
+}
+export class ChangeEnvelopeUpperBound extends Change {
+    constructor(doc: SongDocument, oldValue: number, value: number, index: number) {
+        super(); const e = doc.song.channels[doc.channel].instruments[doc.getCurrentInstrument()].envelopes[index];
+        value = Math.max(Config.perEnvelopeBoundMin, Math.min(Config.perEnvelopeBoundMax, Math.round(value * 10) / 10));
+        e.perEnvelopeUpperBound = value; if (oldValue != value) { doc.notifier.changed(); this._didSomething(); }
+    }
+}
+export class ChangeRandomEnvelopeSteps extends Change {
+    constructor(doc: SongDocument, value: number, index: number) {
+        super(); const e = doc.song.channels[doc.channel].instruments[doc.getCurrentInstrument()].envelopes[index];
+        const old = e.steps; e.steps = Math.max(1, Math.min(Config.randomEnvelopeStepsMax, Math.floor(value)));
+        if (old != e.steps) { doc.notifier.changed(); this._didSomething(); }
+    }
+}
+export class ChangeRandomEnvelopeSeed extends Change {
+    constructor(doc: SongDocument, value: number, index: number) {
+        super(); const e = doc.song.channels[doc.channel].instruments[doc.getCurrentInstrument()].envelopes[index];
+        const old = e.seed; e.seed = Math.max(1, Math.min(Config.randomEnvelopeSeedMax, Math.floor(value)));
+        if (old != e.seed) { doc.notifier.changed(); this._didSomething(); }
+    }
+}
+export class ChangeSetEnvelopeWaveform extends Change {
+    constructor(doc: SongDocument, value: number, index: number) {
+        super(); const e = doc.song.channels[doc.channel].instruments[doc.getCurrentInstrument()].envelopes[index];
+        const old = e.waveform; e.waveform = value; if (old != value) { doc.notifier.changed(); this._didSomething(); }
+    }
+}
+export class PasteEnvelope extends Change {
+    constructor(doc: SongDocument, value: any, index: number) {
+        super(); const e = doc.song.channels[doc.channel].instruments[doc.getCurrentInstrument()].envelopes[index];
+        e.fromJsonObject(value); doc.notifier.changed(); this._didSomething();
     }
 }
 

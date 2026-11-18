@@ -36,20 +36,26 @@ export const enum FilterType {
 }
 
 export const enum EnvelopeType {
+	none,
 	noteSize,
-    none,
+	pitch,
+	pseudorandom,
 	punch,
 	flare,
 	twang,
 	swell,
-	tremolo,
+	lfo,
 	tremolo2,
     decay,
     wibble,
-    hard,
     linear,
     rise,
+	blip,
+	fall,
 }
+
+export const enum LFOEnvelopeTypes { sine, square, triangle, sawtooth, trapezoid, steppedSaw, steppedTri, length }
+export const enum RandomEnvelopeTypes { time, pitch, note, timeSmooth, length }
 
 export const enum InstrumentType {
     chip,
@@ -74,6 +80,7 @@ export const enum DropdownID {
     Chord = 2,
     Transition = 3,
     FM = 4,
+    EnvelopeSettings = 5,
 
 }
 
@@ -582,10 +589,10 @@ export class Config {
         { name: "swell 1", type: EnvelopeType.swell, speed: 32.0 },
         { name: "swell 2", type: EnvelopeType.swell, speed: 8.0 },
         { name: "swell 3", type: EnvelopeType.swell, speed: 2.0 },
-        { name: "tremolo0", type: EnvelopeType.tremolo, speed: 8.0 },
-        { name: "tremolo1", type: EnvelopeType.tremolo, speed: 4.0 },
-        { name: "tremolo2", type: EnvelopeType.tremolo, speed: 2.0 },
-        { name: "tremolo3", type: EnvelopeType.tremolo, speed: 1.0 },
+        { name: "tremolo0", type: EnvelopeType.lfo, speed: 8.0 },
+        { name: "tremolo1", type: EnvelopeType.lfo, speed: 4.0 },
+        { name: "tremolo2", type: EnvelopeType.lfo, speed: 2.0 },
+        { name: "tremolo3", type: EnvelopeType.lfo, speed: 1.0 },
         { name: "tremolo4", type: EnvelopeType.tremolo2, speed: 4.0 },
         { name: "tremolo5", type: EnvelopeType.tremolo2, speed: 2.0 },
         { name: "tremolo6", type: EnvelopeType.tremolo2, speed: 1.0 },
@@ -608,6 +615,36 @@ export class Config {
         { name: "rise 2", type: EnvelopeType.rise, speed: 8.0 },
         { name: "rise 3", type: EnvelopeType.rise, speed: 2.0 },
     ]);
+
+    // Slarmoo's Box envelope vocabulary. The legacy table above remains for imported drum envelopes.
+    public static readonly newEnvelopes: DictionaryArray<Envelope> = toNameMap([
+        { name: "none", type: EnvelopeType.none, speed: 1.0 },
+        { name: "note size", type: EnvelopeType.noteSize, speed: 1.0 },
+        { name: "pitch", type: EnvelopeType.pitch, speed: 1.0 },
+        { name: "random", type: EnvelopeType.pseudorandom, speed: 4.0 },
+        { name: "punch", type: EnvelopeType.punch, speed: 1.0 },
+        { name: "flare", type: EnvelopeType.flare, speed: 32.0 },
+        { name: "twang", type: EnvelopeType.twang, speed: 32.0 },
+        { name: "swell", type: EnvelopeType.swell, speed: 32.0 },
+        { name: "lfo", type: EnvelopeType.lfo, speed: 1.0 },
+        { name: "decay", type: EnvelopeType.decay, speed: 10.0 },
+        { name: "wibble", type: EnvelopeType.wibble, speed: 24.0 },
+        { name: "linear", type: EnvelopeType.linear, speed: 32.0 },
+        { name: "rise", type: EnvelopeType.rise, speed: 32.0 },
+        { name: "blip", type: EnvelopeType.blip, speed: 6.0 },
+        { name: "fall", type: EnvelopeType.fall, speed: 6.0 },
+    ]);
+
+    public static readonly perEnvelopeSpeedIndices: number[] = [0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.2, 0.25, 0.3, 0.3333, 0.4, 0.5, 0.6, 0.6667, 0.7, 0.75, 0.8, 0.9, 1, 1.25, 1.3333, 1.5, 1.6667, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 24, 32, 40, 64, 128, 256];
+    public static readonly perEnvelopeSpeedToIndices: Dictionary<number> = (() => {
+        const indices: Dictionary<number> = {};
+        Config.perEnvelopeSpeedIndices.forEach((speed, index) => { indices[String(speed)] = index; });
+        return indices;
+    })();
+    public static readonly perEnvelopeBoundMin: number = 0;
+    public static readonly perEnvelopeBoundMax: number = 2;
+    public static readonly randomEnvelopeSeedMax: number = 63;
+    public static readonly randomEnvelopeStepsMax: number = 32;
 	public static readonly feedbacks: DictionaryArray<Feedback> = toNameMap([
 		{ name: "1⟲", indices: [[1], [], [], []] },
 		{ name: "2⟲", indices: [[], [2], [], []] },
@@ -723,7 +760,7 @@ export class Config {
     public static readonly bitcrusherOctaveStep: number = 0.5;
     public static readonly bitcrusherQuantizationRange: number = 8;
 
-    public static readonly maxEnvelopeCount: number = 12;
+    public static readonly maxEnvelopeCount: number = 16;
     public static readonly defaultAutomationRange: number = 13;
     public static readonly instrumentAutomationTargets: DictionaryArray<AutomationTarget> = toNameMap([
         { name: "none", computeIndex: null, displayName: "none",             /*perNote: false,*/ interleave: false, isFilter: false, /*range: 0,                              */    maxCount: 1, effect: null, compatibleInstruments: null },
