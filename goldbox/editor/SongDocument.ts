@@ -430,18 +430,20 @@ export class SongDocument {
 	}
 		
 	public getMobileLayout(): boolean {
-		return (this.prefs.layout == "wide") ? window.innerWidth <= 1000 : window.innerWidth <= 710;
+		return (this.prefs.layout == "wide" || this.prefs.layout == "long-br") ? window.innerWidth <= 1000 : window.innerWidth <= 710;
 	}
 		
 	public getBarWidth(): number {
 		// Bugfix: In wide fullscreen, the 32 pixel display doesn't work as the trackEditor is still horizontally constrained
-		return (!this.getMobileLayout() && this.prefs.enableChannelMuting && (!this.getFullScreen() || this.prefs.layout == "wide")) ? 30 : 32;
+		const wideLayout: boolean = this.prefs.layout == "wide" || this.prefs.layout == "long-br";
+		return (!this.getMobileLayout() && this.prefs.enableChannelMuting && (!this.getFullScreen() || wideLayout)) ? 30 : 32;
 	}
 		
 	public getChannelHeight(): number {
 		const squashed: boolean = this.getMobileLayout() || this.song.getChannelCount() > 4 || (this.song.barCount > this.trackVisibleBars && this.song.getChannelCount() > 3);
 		// TODO: Jummbox widescreen should allow more channels before squashing or megasquashing
-		const megaSquashed: boolean = !this.getMobileLayout() && (((this.prefs.layout != "wide") && this.song.getChannelCount() > 11) || this.song.getChannelCount() > 22);
+		const wideLayout: boolean = this.prefs.layout == "wide" || this.prefs.layout == "long-br";
+		const megaSquashed: boolean = !this.getMobileLayout() && ((!wideLayout && this.song.getChannelCount() > 11) || this.song.getChannelCount() > 22);
 		return megaSquashed ? 23 : (squashed ? 27 : 32);
 	}
 		

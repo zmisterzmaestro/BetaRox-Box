@@ -274,6 +274,103 @@ export class Layout {
 				}
 			}
 		`,
+		"long-br": `\
+			/* Long (BR) layout: song controls and channel labels left, editor center, instrument controls right. */
+			@media (min-width: 1001px) {
+				#beepboxEditorContainer {
+					max-width: initial;
+					height: 100vh;
+				}
+				.beepboxEditor {
+					--br-song-options-width: clamp(220px, 20vw, 280px);
+					width: 100%;
+					height: 100vh;
+					grid-template-columns: var(--br-song-options-width) minmax(0, 1fr) minmax(300px, 30em);
+					grid-template-rows: auto auto auto minmax(0, 1fr) min-content;
+					grid-template-areas:
+						"version-area pattern-area instrument-settings-area"
+						"play-pause-area pattern-area instrument-settings-area"
+						"menu-area pattern-area instrument-settings-area"
+						"song-settings-area pattern-area instrument-settings-area"
+						"track-area track-area instrument-settings-area";
+					grid-column-gap: 8px;
+				}
+				.beepboxEditor .settings-area {
+					display: contents;
+				}
+				.beepboxEditor .version-area,
+				.beepboxEditor .play-pause-area,
+				.beepboxEditor .menu-area,
+				.beepboxEditor .song-settings-area {
+					min-width: 0;
+					width: auto;
+				}
+				.beepboxEditor .song-settings-area {
+					min-height: 0;
+					overflow-y: auto;
+				}
+				.beepboxEditor .pattern-area {
+					width: 100%;
+					height: 100%;
+					min-width: 0;
+					min-height: 481px;
+				}
+				.beepboxEditor .track-area {
+					width: 100%;
+					min-width: 0;
+					display: flex;
+					flex-direction: column;
+				}
+				.beepboxEditor .trackAndMuteContainer {
+					width: 100%;
+					min-width: 0;
+					flex: 1;
+					overflow: auto;
+					max-height: 97.5vh;
+				}
+				.beepboxEditor .trackControls {
+					width: var(--br-song-options-width);
+					flex-basis: var(--br-song-options-width);
+					box-sizing: border-box;
+				}
+				.beepboxEditor .trackContainer {
+					min-width: 0;
+					flex: 1;
+					overflow: visible;
+				}
+				.beepboxEditor .instrument-settings-area {
+					min-width: 0;
+					width: auto;
+					position: relative;
+					overflow-y: auto;
+				}
+				.beepboxEditor .instrument-settings-area > .editor-controls {
+					position: absolute;
+					width: 100%;
+				}
+				.beepboxEditor .barScrollBar {
+					display: none;
+				}
+				.beepboxEditor .trackAndMuteContainer {
+					scrollbar-width: auto;
+					scrollbar-color: ${ColorConfig.uiWidgetBackground} ${ColorConfig.editorBackground};
+				}
+				.beepboxEditor .trackAndMuteContainer::-webkit-scrollbar {
+					width: 20px;
+					height: 20px;
+				}
+				.beepboxEditor .trackAndMuteContainer::-webkit-scrollbar-track {
+					background: ${ColorConfig.editorBackground};
+				}
+				.beepboxEditor .trackAndMuteContainer::-webkit-scrollbar-thumb {
+					background-color: ${ColorConfig.uiWidgetBackground};
+					border: 3px solid ${ColorConfig.editorBackground};
+				}
+				.beepboxEditor .trackAndMuteContainer::-webkit-scrollbar-corner {
+					background-color: ${ColorConfig.editorBackground};
+				}
+			}
+		`,
 	}
 		
 		private static readonly _styleElement: HTMLStyleElement = document.head.appendChild(HTML.style({type: "text/css"}));
