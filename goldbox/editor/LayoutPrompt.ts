@@ -11,7 +11,7 @@ export class LayoutPrompt implements Prompt {
 	private readonly _fileInput: HTMLInputElement = input({type: "file", accept: ".json,application/json,.mid,.midi,audio/midi,audio/x-midi"});
 	private readonly _okayButton: HTMLButtonElement = button({class: "okayButton", style: "width:45%;"}, "Okay");
 	private readonly _cancelButton: HTMLButtonElement = button({class: "cancelButton"});
-	private readonly _form: HTMLFormElement = form({style: "display: flex; gap: 10px;"},
+	private readonly _form: HTMLFormElement = form({style: "display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;"},
 			label({class: "layout-option"},
 				input({type: "radio", name: "layout", value: "small"}),
 				SVG(`\
@@ -36,6 +36,19 @@ export class LayoutPrompt implements Prompt {
 					</svg>
 				`),
 				div("Long"),
+			),
+			label({class: "layout-option"},
+				input({type: "radio", name: "layout", value: "long-br"}),
+				SVG(`\
+					<svg viewBox="-1 -1 28 22">
+						<rect x="0" y="0" width="26" height="20" fill="none" stroke="currentColor" stroke-width="1"/>
+						<rect x="2" y="2" width="4" height="10" fill="currentColor"/>
+						<rect x="2" y="13" width="4" height="5" fill="currentColor"/>
+						<rect x="8" y="2" width="10" height="16" fill="currentColor"/>
+						<rect x="19" y="2" width="5" height="16" fill="currentColor"/>
+					</svg>
+				`),
+				div("Long (BR)"),
 			),
 			label({class: "layout-option"},
 				input({type: "radio", name: "layout", value: "tall"}),
@@ -64,7 +77,7 @@ export class LayoutPrompt implements Prompt {
 			),
 		);
 	
-	public readonly container: HTMLDivElement = div({class: "prompt noSelection", style: "width: 300px;"},
+	public readonly container: HTMLDivElement = div({class: "prompt noSelection", style: "width: 360px; max-width: 90vw;"},
 		h2("Layout"),
 		this._form,
 		div({style: "display: flex; flex-direction: row-reverse; justify-content: space-between;"},
