@@ -1889,7 +1889,7 @@ export class SongEditor {
         this._barScrollBar.container.style.display = this._doc.song.barCount > this._doc.trackVisibleBars ? "" : "none";
         this._volumeBarBox.style.display = this._doc.prefs.displayVolumeBar ? "" : "none";
 
-        if (this._doc.getFullScreen()) {
+        if (this._doc.getFullScreen() && this._doc.prefs.layout != "long-br") {
             const semitoneHeight: number = this._patternEditorRow.clientHeight / this._doc.getVisiblePitchCount();
             const targetBeatWidth: number = semitoneHeight * 5;
             const minBeatWidth: number = this._patternEditorRow.clientWidth / (this._doc.song.beatsPerBar * 3);
