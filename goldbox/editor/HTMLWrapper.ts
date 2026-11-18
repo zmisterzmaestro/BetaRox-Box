@@ -70,3 +70,28 @@ export class Slider {
 		}
 	};
 }
+
+
+export class DoubleSlider {
+ public readonly container: HTMLSpanElement;
+ private readonly leftInput: HTMLInputElement;
+ private readonly rightInput: HTMLInputElement;
+ private readonly leftSlider: Slider;
+ private readonly rightSlider: Slider;
+ private _min: number;
+ private _max: number;
+ constructor(doc: SongDocument, getChangeLeft: ((oldValue:number,newValue:number)=>Change)|null, getChangeRight: ((oldValue:number,newValue:number)=>Change)|null, _getModLeft:()=>number|null, _getModRight:()=>number|null, left:number, right:number, min:number, max:number, _midTick: 0|1|2) {
+  this._min=min; this._max=max;
+  this.leftInput=HTML.input({type:"range",min,max,value:left,step:"1",style:"flex:1; min-width:0;"});
+  this.rightInput=HTML.input({type:"range",min,max,value:right,step:"1",style:"flex:1; min-width:0;"});
+  this.leftSlider=new Slider(this.leftInput,doc,getChangeLeft,false);
+  this.rightSlider=new Slider(this.rightInput,doc,getChangeRight,false);
+  this.container=HTML.span({style:"display:flex; align-items:center; gap:2px; flex:3;"},this.leftSlider.container,this.rightSlider.container);
+ }
+ set max(value:number){this._max=value;this.leftInput.max=String(value);this.rightInput.max=String(value);}
+ get max():number{return this._max;}
+ set min(value:number){this._min=value;this.leftInput.min=String(value);this.rightInput.min=String(value);}
+ get min():number{return this._min;}
+ updateValues(left:number,right:number):void{this.leftSlider.updateValue(left);this.rightSlider.updateValue(right);}
+ render():void{}
+}

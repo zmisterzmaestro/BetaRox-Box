@@ -923,7 +923,7 @@ export class SongEditor {
     private readonly _spectrumRow: HTMLElement = div({ class: "selectRow" }, span({ class: "tip", onclick: () => this._openPrompt("spectrum") }, "Spectrum:"), this._spectrumEditor.container);
     private readonly _harmonicsEditor: HarmonicsEditor = new HarmonicsEditor(this._doc);
     private readonly _harmonicsRow: HTMLElement = div({ class: "selectRow" }, span({ class: "tip", onclick: () => this._openPrompt("harmonics") }, "Harmonics:"), this._harmonicsEditor.container);
-    private readonly _envelopeEditor: EnvelopeEditor = new EnvelopeEditor(this._doc);
+    private readonly _envelopeEditor: EnvelopeEditor = new EnvelopeEditor(this._doc, (id: DropdownID, submenu: number) => this._toggleDropdownMenu(id, submenu), (name: string) => this._openPrompt(name));
     private readonly _drumsetGroup: HTMLElement = div({ class: "editor-controls" });
     private readonly _modulatorGroup: HTMLElement = div({ class: "editor-controls" });
     private readonly _modNameRows: HTMLElement[];
