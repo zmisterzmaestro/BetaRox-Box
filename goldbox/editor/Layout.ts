@@ -276,14 +276,19 @@ export class Layout {
 		`,
 		"long-br": `\
 			/* Long (BR) layout: song controls and channel labels left, editor center, instrument controls right. */
-			@media (min-width: 1001px) {
+			@media (min-width: 0px) {
 				#beepboxEditorContainer {
+					box-sizing: border-box;
+					width: 100%;
+					min-width: 0;
 					max-width: initial;
 					height: 100vh;
+					overflow: auto;
 				}
 				.beepboxEditor {
 					--br-side-panel-width: var(--settings-area-width);
 					width: 100%;
+					min-width: 1001px;
 					height: 100vh;
 					grid-template-columns: var(--br-side-panel-width) minmax(0, 1fr) var(--br-side-panel-width);
 					grid-template-rows: auto auto auto minmax(0, 1fr) min-content;
