@@ -80,6 +80,12 @@ export class TipPrompt implements Prompt {
 					p("Either way, you can click the + button to add more instruments to a channel, and you can press shift and a number key on your keyboard to select an instrument as if you had clicked the corresponding button here."),
 				);
 			} break;
+			case "instrumentOctave": {
+				message = div(
+					h2("Instrument Octave"),
+					p("This shifts the sounding pitch of every note in the selected instrument by whole octaves. It does not move the notes in the pattern editor or affect other instruments."),
+				);
+			} break;
 			case "instrumentVolume": {
 				message = div(
 					h2("Instrument Volume"),
