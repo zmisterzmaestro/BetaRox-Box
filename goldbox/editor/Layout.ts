@@ -334,6 +334,8 @@ export class Layout {
 				}
 				.beepboxEditor .track-area {
 					box-sizing: border-box;
+					overflow: hidden;
+					min-height: 0;
 					width: 100%;
 					min-width: 0;
 					display: flex;
@@ -370,7 +372,7 @@ export class Layout {
 				.beepboxEditor .trackContainer {
 					min-width: 0;
 					flex: 1;
-					overflow: visible;
+					overflow: hidden;
 				}
 				.beepboxEditor .instrument-settings-area {
 					box-sizing: border-box;
