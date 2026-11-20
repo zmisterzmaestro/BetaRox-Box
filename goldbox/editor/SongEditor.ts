@@ -829,7 +829,7 @@ export class SongEditor {
         div({ style: "color: " + ColorConfig.secondaryText + "; margin-top: -3px;" }, this._panSliderInputBox),
     ), this._panDropdown, this._panSlider.container);
     private readonly _instrumentOctaveSelect: HTMLSelectElement = select({ id: "instrumentOctave", title: "Sounding instrument octave; does not move pattern notes", "aria-label": "Instrument octave" }, ...[-3,-2,-1,0,1,2,3].map(n => option({value: String(n)}, n > 0 ? "+" + n : String(n))));
-    private readonly _instrumentOctaveRow: HTMLDivElement = div({ class: "selectRow" }, span({}, "Octave:"), div({ class: "selectContainer" }, this._instrumentOctaveSelect));
+    private readonly _instrumentOctaveRow: HTMLDivElement = div({ class: "selectRow" }, span({ class: "tip", tabindex: "0", onclick: () => this._openPrompt("instrumentOctave") }, "Octave:"), div({ class: "selectContainer" }, this._instrumentOctaveSelect));
     private readonly _panDelaySlider: Slider = new Slider(input({ style: "margin: 0;", type: "range", min: "0", max: Config.modulators.dictionary["pan delay"].maxRawVol, value: "0", step: "1" }), this._doc, (oldValue: number, newValue: number) => new ChangePanDelay(this._doc, oldValue, newValue), false);
     private readonly _panDelayRow: HTMLElement = div({ class: "selectRow" }, span({ class: "tip", style: "margin-left:10px;", onclick: () => this._openPrompt("panDelay") }, "Delay:"), this._panDelaySlider.container);
     private readonly _panDropdownGroup: HTMLElement = div({ class: "editor-controls", style: "display: none;" }, this._panDelayRow);
