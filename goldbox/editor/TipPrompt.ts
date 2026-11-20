@@ -30,6 +30,27 @@ export class TipPrompt implements Prompt {
 					p("If you've already placed some notes but they don't emphasize \"tonic\" pitches then the selected key isn't very meaningful. You can select the \"Detect Key\" option in the key menu to automatically align the most emphasized notes with \"tonic\" pitches."),
 				);
 			} break;
+			case "temperament": {
+				message = div(
+					h2("Tuning"),
+					p("Tuning selects a temperament: the frequency relationships between the notes. Changing it changes how intervals sound; it does not change the notes you entered."),
+					p("Try the same melody or chord in different tunings to hear the difference. A4 (Hz) sets the reference pitch separately."),
+				);
+			} break;
+			case "referenceA4Hz": {
+				message = div(
+					h2("A4 Reference Pitch"),
+					p("This sets the frequency of A4 in hertz (Hz), which the editor uses as the reference for pitched notes. The input accepts whole numbers from 380 to 480 Hz; 440 Hz is the standard reference."),
+					p("The selected tuning determines how other pitches relate to that reference."),
+				);
+			} break;
+			case "noteFrequency": {
+				message = div(
+					h2("Note Frequency"),
+					p("This readout shows the nominal frequency, in hertz (Hz), of the last focused pitched note, including the selected instrument octave. It shows a dash when no pitched note is focused."),
+					p("The displayed value follows the song's tuning and A4 reference, but does not include pitch bends, detune, or other synthesis effects."),
+				);
+			} break;
 			case "tempo": {
 				message = div(
 					h2("Song Tempo"),
