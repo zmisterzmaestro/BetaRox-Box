@@ -291,7 +291,7 @@ export class Layout {
 					min-width: 1001px;
 					height: 100vh;
 					grid-template-columns: var(--br-side-panel-width) minmax(0, 1fr) var(--br-side-panel-width);
-					grid-template-rows: auto auto auto minmax(0, 1fr) min-content;
+					grid-template-rows: auto auto auto minmax(0, 1fr) minmax(0, min(35vh, 446px));
 					grid-template-areas:
 						"version-area pattern-area instrument-settings-area"
 						"play-pause-area pattern-area instrument-settings-area"
@@ -363,8 +363,11 @@ export class Layout {
 				}
 				.beepboxEditor .trackControls {
 					width: var(--br-side-panel-width);
-					flex-basis: var(--br-side-panel-width);
+					max-height: 100%;
+					min-height: 0;
+					flex: 0 0 var(--br-side-panel-width);
 					box-sizing: border-box;
+					overflow: hidden;
 				}
 				.beepboxEditor .channelLabels {
 					width: calc(var(--br-side-panel-width) - 49px);
