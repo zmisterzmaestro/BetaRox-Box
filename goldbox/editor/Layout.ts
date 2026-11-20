@@ -291,7 +291,7 @@ export class Layout {
 					min-width: 1001px;
 					height: 100vh;
 					grid-template-columns: var(--br-side-panel-width) minmax(0, 1fr) var(--br-side-panel-width);
-					grid-template-rows: auto auto auto minmax(0, 1fr) minmax(0, min(35vh, 446px));
+					grid-template-rows: auto auto auto minmax(0, 1fr) minmax(0, min(30vh, 320px));
 					grid-template-areas:
 						"version-area pattern-area instrument-settings-area"
 						"play-pause-area pattern-area instrument-settings-area"
@@ -357,12 +357,15 @@ export class Layout {
 				.beepboxEditor .trackAndMuteContainer {
 					width: 100%;
 					min-width: 0;
-					flex: 1;
+					height: 0;
+					min-height: 0;
+					flex: 1 1 0%;
 					overflow: auto;
 					max-height: 97.5vh;
 				}
 				.beepboxEditor .trackControls {
 					width: var(--br-side-panel-width);
+					height: 100%;
 					max-height: 100%;
 					min-height: 0;
 					flex: 0 0 var(--br-side-panel-width);
