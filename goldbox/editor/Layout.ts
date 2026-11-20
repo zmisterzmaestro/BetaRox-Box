@@ -364,9 +364,6 @@ export class Layout {
 					max-height: 97.5vh;
 				}
 				.beepboxEditor .trackControls {
-					/* Override the shared sticky track controls so channel labels stay inside this clipped panel. */
-					position: relative;
-					contain: paint;
 					width: var(--br-side-panel-width);
 					height: 100%;
 					max-height: 100%;
