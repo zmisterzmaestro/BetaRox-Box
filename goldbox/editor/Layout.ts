@@ -328,7 +328,8 @@ export class Layout {
 					width: 100%;
 					height: 100%;
 					min-width: 0;
-					min-height: 481px;
+					/* The Long BR grid has a fixed bottom track row; let the pattern area shrink with short windows. */
+					min-height: 0;
 					padding: 8px;
 					border: 1px solid ${ColorConfig.uiWidgetBackground};
 				}
