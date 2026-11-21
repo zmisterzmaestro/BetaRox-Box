@@ -7,6 +7,7 @@ import { Change, ChangeGroup, ChangeSequence, UndoableChange } from "./Change";
 import { Slider } from "./HTMLWrapper";
 import { SongDocument } from "./SongDocument";
 import { ColorConfig } from "./ColorConfig";
+import { MeterProfile, meterDurationParts } from "../synth/Meter";
 
 export function patternsContainSameInstruments(pattern1Instruments: number[], pattern2Instruments: number[]): boolean {
     const pattern2Has1Instruments: boolean = pattern1Instruments.every(instrument => pattern2Instruments.indexOf(instrument) != -1);
@@ -3197,6 +3198,22 @@ export class ChangeBeatsPerBar extends ChangeGroup {
             }
 
             doc.song.beatsPerBar = newValue;
+            doc.notifier.changed();
+            this._didSomething();
+        }
+    }
+}
+
+export class ChangeMeterProfile extends ChangeGroup {
+    constructor(doc: SongDocument, profile: MeterProfile, strategy: string) {
+        super();
+        const durationParts: number = meterDurationParts(profile);
+        const newBeatsPerBar: number = durationParts / Config.partsPerBeat;
+        const profileChanged: boolean = JSON.stringify(doc.song.meterProfile) != JSON.stringify(profile);
+        const durationChanged: boolean = doc.song.beatsPerBar != newBeatsPerBar;
+        if (durationChanged) this.append(new ChangeBeatsPerBar(doc, newBeatsPerBar, strategy));
+        if (profileChanged || durationChanged) {
+            doc.song.meterProfile = JSON.parse(JSON.stringify(profile));
             doc.notifier.changed();
             this._didSomething();
         }

@@ -750,7 +750,6 @@ export class SongEditor {
         option({ value: "transposeUp" }, "Move Notes Up (+ or ⇧+)"),
         option({ value: "transposeDown" }, "Move Notes Down (- or ⇧-)"),
         option({ value: "moveNotesSideways" }, "Move All Notes Sideways... (W)"),
-        option({ value: "beatsPerBar" }, "Change Beats Per Bar..."),
         option({ value: "barCount" }, "Change Song Length... (L)"),
         option({ value: "channelSettings" }, "Channel Settings... (Q)"),
         option({ value: "limiterSettings" }, "Limiter Settings... (⇧L)"),
@@ -770,6 +769,7 @@ export class SongEditor {
         option({ value: "enableChannelMuting" }, "Enable Channel Muting"),
         option({ value: "displayBrowserUrl" }, "Display Song Data in URL"),
         option({ value: "displayVolumeBar" }, "Show Playback Volume"),
+        option({ value: "beatsPerBar" }, "Meter and Grouping... (G)"),
         option({ value: "layout" }, "Set Layout..."),
         option({ value: "colorTheme" }, "Set Theme..."),
         option({ value: "recordingSetup" }, "Set Up Note Recording..."),
@@ -3439,6 +3439,13 @@ export class SongEditor {
                     event.preventDefault();
                 }
                 break;
+            case 71: // g: meter and grouping
+                if (canPlayNotes) break;
+                if (needControlForShortcuts == (event.ctrlKey || event.metaKey)) {
+                    this._openPrompt("beatsPerBar");
+                    event.preventDefault();
+                }
+                break;
             case 72: // h
                 if (canPlayNotes) break;
                 if (needControlForShortcuts == (event.ctrlKey || event.metaKey)) {
@@ -4425,6 +4432,9 @@ export class SongEditor {
                 break;
             case "layout":
                 this._openPrompt("layout");
+                break;
+            case "beatsPerBar":
+                this._openPrompt("beatsPerBar");
                 break;
             case "colorTheme":
                 this._openPrompt("theme");

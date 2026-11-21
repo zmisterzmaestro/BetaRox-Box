@@ -6,6 +6,7 @@ import { scaleElementsByFactor, inverseRealFourierTransform } from "./FFT";
 import { Deque } from "./Deque";
 import { events } from "../global/Events";
 import { FilterCoefficients, FrequencyResponse, DynamicBiquadFilter } from "./filtering";
+import { MeterProfile, meterDurationParts, normalizeMeterProfile } from "./Meter";
 
 declare global {
     interface Window {
@@ -2634,6 +2635,7 @@ export class Song {
     public tempo: number;
     public reverb: number;
     public beatsPerBar: number;
+    public meterProfile: MeterProfile | null = null;
     public barCount: number;
     public patternsPerChannel: number;
     public rhythm: number;
@@ -2797,6 +2799,7 @@ public getTunedFrequencyFromPitch(pitch: number): number {
         this.tempo = 150;
         this.reverb = 0;
         this.beatsPerBar = 8;
+        this.meterProfile = null;
         this.barCount = 16;
         this.patternsPerChannel = 8;
         this.rhythm = 1;
@@ -2853,6 +2856,7 @@ public getTunedFrequencyFromPitch(pitch: number): number {
         url.searchParams.delete("betaroxTuning");
         url.searchParams.delete("bn");
         url.searchParams.delete("betaroxMuted");
+        url.searchParams.delete("betaroxMeter");
         if (this.pitchesPerOctave == 12 && (this.temperament != 0 || this.referenceA4Hz != 440)) {
             url.searchParams.set("betaroxTuning", "1," + this.temperament + "," + this.referenceA4Hz);
         }
@@ -2861,8 +2865,26 @@ public getTunedFrequencyFromPitch(pitch: number): number {
         }
         const mutedChannels = this.channels.map((channel, index) => channel.muted ? index : -1).filter(index => index >= 0);
         if (mutedChannels.length > 0) url.searchParams.set("betaroxMuted", mutedChannels.join(","));
+        if (this.meterProfile) url.searchParams.set("betaroxMeter", JSON.stringify(this.meterProfile));
         url.hash = this.toBase64String(false, false);
         return url.href;
+    }
+
+    public static applyMeterProfileFromUrl(song: Song, href: string): void {
+        song.meterProfile = null;
+        try {
+            const raw: string | null = new URL(href).searchParams.get("betaroxMeter");
+            if (!raw) return;
+            const profile: MeterProfile | null = normalizeMeterProfile(JSON.parse(raw));
+            if (!profile) return;
+            const durationParts: number = meterDurationParts(profile);
+            if (durationParts / Config.partsPerBeat >= Config.beatsPerBarMin && durationParts / Config.partsPerBeat <= Config.beatsPerBarMax) {
+                song.meterProfile = profile;
+                song.beatsPerBar = durationParts / Config.partsPerBeat;
+            }
+        } catch (_) {
+            // Invalid optional meter metadata must not prevent the song from opening.
+        }
     }
 
     public static applyMuteStateFromUrl(song: Song, href: string): void {
@@ -2941,7 +2963,10 @@ public getTunedFrequencyFromPitch(pitch: number): number {
         buffer.push(SongTagCode.loopStart, base64IntToCharCode[this.loopStart >> 6], base64IntToCharCode[this.loopStart & 0x3f]);
         buffer.push(SongTagCode.loopEnd, base64IntToCharCode[(this.loopLength - 1) >> 6], base64IntToCharCode[(this.loopLength - 1) & 0x3f]);
         buffer.push(SongTagCode.tempo, base64IntToCharCode[this.tempo >> 6], base64IntToCharCode[this.tempo & 0x3F]);
-        buffer.push(SongTagCode.beatCount, base64IntToCharCode[this.beatsPerBar - 1]);
+        // The shared GoldBox payload only supports integral beats per bar. BetaRox
+        // stores flexible meter in URL metadata so legacy payloads remain readable.
+        const legacyBeatCount: number = Math.max(Config.beatsPerBarMin, Math.min(Config.beatsPerBarMax, Math.round(this.beatsPerBar)));
+        buffer.push(SongTagCode.beatCount, base64IntToCharCode[legacyBeatCount - 1]);
         buffer.push(SongTagCode.barCount, base64IntToCharCode[(this.barCount - 1) >> 6], base64IntToCharCode[(this.barCount - 1) & 0x3f]);
         buffer.push(SongTagCode.patternCount, base64IntToCharCode[(this.patternsPerChannel - 1) >> 6], base64IntToCharCode[(this.patternsPerChannel - 1) & 0x3f]);
         buffer.push(SongTagCode.rhythm, base64IntToCharCode[this.rhythm]);
@@ -5331,6 +5356,7 @@ public getTunedFrequencyFromPitch(pitch: number): number {
             "introBars": this.loopStart,
             "loopBars": this.loopLength,
             "beatsPerBar": this.beatsPerBar,
+            ...(this.meterProfile ? { "meterProfile": this.meterProfile } : {}),
             "ticksPerBeat": Config.rhythms[this.rhythm].stepsPerBeat,
             "beatsPerMinute": this.tempo,
             "reverb": this.reverb,
@@ -5416,6 +5442,14 @@ public getTunedFrequencyFromPitch(pitch: number): number {
 
         if (jsonObject["beatsPerBar"] != undefined) {
             this.beatsPerBar = Math.max(Config.beatsPerBarMin, Math.min(Config.beatsPerBarMax, jsonObject["beatsPerBar"] | 0));
+        }
+        const importedMeterProfile: MeterProfile | null = normalizeMeterProfile(jsonObject["meterProfile"]);
+        if (importedMeterProfile) {
+            const durationParts: number = meterDurationParts(importedMeterProfile);
+            if (durationParts / Config.partsPerBeat >= Config.beatsPerBarMin && durationParts / Config.partsPerBeat <= Config.beatsPerBarMax) {
+                this.meterProfile = importedMeterProfile;
+                this.beatsPerBar = durationParts / Config.partsPerBeat;
+            }
         }
 
         let importedPartsPerBeat: number = 4;

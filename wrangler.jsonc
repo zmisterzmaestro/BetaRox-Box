@@ -3,6 +3,7 @@
   "name": "betarox-box",
   "compatibility_date": "2026-11-01",
   "workers_dev": true,
+  "preview_urls": true,
   "routes": [
     { "pattern": "betarox.randomusicstuff.com", "custom_domain": true }
   ],

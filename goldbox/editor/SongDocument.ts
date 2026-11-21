@@ -12,6 +12,7 @@ import { Preferences } from "./Preferences";
 import { Change } from "./Change";
 import { ChangeNotifier } from "./ChangeNotifier";
 import {ChangeSong, setDefaultInstruments, discardInvalidPatternInstruments, ChangeHoldingModRecording} from "./changes";
+import { MeterProfile, meterDurationParts, normalizeMeterProfile } from "../synth/Meter";
 
 interface HistoryState {
 	canUndo: boolean;
@@ -22,6 +23,7 @@ interface HistoryState {
 	recoveryUid: string;
 	prompt: string | null;
 		selection: {x0: number, x1: number, y0: number, y1: number, start: number, end: number};
+	meterProfile?: MeterProfile | null;
 }
 
 export class SongDocument {
@@ -77,6 +79,9 @@ export class SongDocument {
 			songString = this._getHash();
 		}
 		this.song = new Song(songString);
+		Song.applyMeterProfileFromUrl(this.song, window.location.href);
+		const initialState = this._getHistoryState();
+		if (initialState && !this.prefs.displayBrowserUrl) this._applyMeterProfileFromState(initialState);
 		Song.applyMuteStateFromUrl(this.song, window.location.href);
 		if (songString == "" || songString == undefined) {
 			setDefaultInstruments(this.song);
@@ -147,10 +152,18 @@ export class SongDocument {
 		
 	private _compatibleUrlForState(hash: string): string {
 		const stateSong: Song = new Song(hash);
+		stateSong.meterProfile = this.song.meterProfile;
+		if (stateSong.meterProfile) stateSong.beatsPerBar = meterDurationParts(stateSong.meterProfile) / Config.partsPerBeat;
 		for (let i: number = 0; i < Math.min(stateSong.getChannelCount(), this.song.getChannelCount()); i++) {
 			stateSong.channels[i].muted = this.song.channels[i].muted;
 		}
 		return stateSong.toCompatibleUrl(window.location.href);
+	}
+
+	private _applyMeterProfileFromState(state: HistoryState): void {
+		const profile: MeterProfile | null = normalizeMeterProfile(state.meterProfile);
+		this.song.meterProfile = profile;
+		if (profile) this.song.beatsPerBar = meterDurationParts(profile) / Config.partsPerBeat;
 	}
 
 	public syncMuteStateToUrl(): void {
@@ -231,6 +244,7 @@ export class SongDocument {
 			const state: HistoryState = {canUndo: true, sequenceNumber: this._sequenceNumber, bar: this.bar, channel: this.channel, instrument: this.viewedInstrument[this.channel], recoveryUid: this._recoveryUid, prompt: null, selection: this.selection.toJSON()};
 			new ChangeSong(this, Song.songStringFromUrl(window.location.href));
 			Song.applyMuteStateFromUrl(this.song, window.location.href);
+			Song.applyMeterProfileFromUrl(this.song, window.location.href);
 			this.prompt = state.prompt;
 			if (this.prefs.displayBrowserUrl) {
 				this._replaceState(state, this.song.toBase64String());
@@ -258,6 +272,8 @@ export class SongDocument {
 		this.prompt = state.prompt;
 		new ChangeSong(this, this._getHash());
 		Song.applyMuteStateFromUrl(this.song, window.location.href);
+		if (this.prefs.displayBrowserUrl) Song.applyMeterProfileFromUrl(this.song, window.location.href);
+		else this._applyMeterProfileFromState(state);
 			
 		this._recoveryUid = state.recoveryUid;
 		this.selection.fromJSON(state.selection);
@@ -349,7 +365,7 @@ export class SongDocument {
 		} else {
 			this._recovery.saveVersion(this._recoveryUid, this.song.title, hash);
 		}
-		let state: HistoryState = {canUndo: true, sequenceNumber: this._sequenceNumber, bar: this.bar, channel: this.channel, instrument: this.viewedInstrument[this.channel], recoveryUid: this._recoveryUid, prompt: this.prompt, selection: this.selection.toJSON()};
+		let state: HistoryState = {canUndo: true, sequenceNumber: this._sequenceNumber, bar: this.bar, channel: this.channel, instrument: this.viewedInstrument[this.channel], recoveryUid: this._recoveryUid, prompt: this.prompt, selection: this.selection.toJSON(), meterProfile: this.song.meterProfile};
 		if (this._stateShouldBePushed) {
 			this._pushState(state, hash);
 		} else {
@@ -386,7 +402,7 @@ export class SongDocument {
 		this.prompt = prompt;
 		const hash: string = this.song.toBase64String();
 		this._sequenceNumber++;
-		const state = {canUndo: true, sequenceNumber: this._sequenceNumber, bar: this.bar, channel: this.channel, instrument: this.viewedInstrument[this.channel], recoveryUid: this._recoveryUid, prompt: this.prompt, selection: this.selection.toJSON()};
+		const state = {canUndo: true, sequenceNumber: this._sequenceNumber, bar: this.bar, channel: this.channel, instrument: this.viewedInstrument[this.channel], recoveryUid: this._recoveryUid, prompt: this.prompt, selection: this.selection.toJSON(), meterProfile: this.song.meterProfile};
 		this._pushState(state, hash);
 	}
 		

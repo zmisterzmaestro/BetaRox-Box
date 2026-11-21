@@ -11,6 +11,7 @@ import { Slider } from "./HTMLWrapper";
 import { SongEditor } from "./SongEditor";
 import { prettyNumber, EditorConfig } from "./EditorConfig";
 import { outsideAcousticRange } from "./AcousticRanges";
+import { MeterProfile, meterColumnStartParts } from "../synth/Meter";
 
 function makeEmptyReplacementElement<T extends Node>(node: T): T {
     const clone: T = <T>node.cloneNode(false);
@@ -42,6 +43,7 @@ export class PatternEditor {
     private readonly _svgModBackground: SVGPatternElement = SVG.pattern({ id: "patternEditorModBackground" + this._barOffset, x: "0", y: "0", patternUnits: "userSpaceOnUse" });
     private readonly _svgBackground: SVGRectElement = SVG.rect({ x: "0", y: "0", "pointer-events": "none", fill: "url(#patternEditorNoteBackground" + this._barOffset + ")" });
     private readonly _rangeShade: SVGGElement = SVG.g({"pointer-events":"none"});
+    private readonly _meterGroupLines: SVGGElement = SVG.g({ "pointer-events": "none" });
     private _svgNoteContainer: SVGSVGElement = SVG.svg();
     private readonly _svgPlayhead: SVGRectElement = SVG.rect({ x: "0", y: "0", width: "4", fill: ColorConfig.playhead, "pointer-events": "none" });
     private readonly _selectionRect: SVGRectElement = SVG.rect({ class: "dashed-line dash-move", fill: ColorConfig.boxSelectionFill, stroke: ColorConfig.hoverPreview, "stroke-width": 2, "stroke-dasharray": "5, 3", "fill-opacity": "0.4", "pointer-events": "none", visibility: "hidden" });
@@ -57,6 +59,7 @@ export class PatternEditor {
         this._rangeShade,
         this._selectionRect,
         this._svgNoteContainer,
+        this._meterGroupLines,
         this._svgPreview,
         this._svgPlayhead,
     );
@@ -2275,6 +2278,7 @@ export class PatternEditor {
         this._editorWidth = this.container.clientWidth;
         this._editorHeight = this.container.clientHeight;
         this._partWidth = this._editorWidth / (this._doc.song.beatsPerBar * Config.partsPerBeat);
+        this._renderMeterColumnLines();
         this._octaveOffset = (this._doc.channel >= this._doc.song.pitchChannelCount) ? 0 : this._doc.getBaseVisiblePitch(this._doc.channel);
 
         if (this._doc.song.getChannelIsNoise(this._doc.channel)) {
@@ -2408,6 +2412,22 @@ export class PatternEditor {
 
         this._updateRangeShade();
         this._redrawNotePatterns();
+    }
+
+    private _renderMeterColumnLines(): void {
+        while (this._meterGroupLines.firstChild) this._meterGroupLines.removeChild(this._meterGroupLines.firstChild);
+        if (!this._doc.song.meterProfile) return;
+        const profile: MeterProfile = this._doc.song.meterProfile;
+        for (let boundary = 1; boundary < profile.columns.length; boundary++) {
+            const x: number = this._partWidth * meterColumnStartParts(profile, boundary);
+            const isGroupEnd: boolean = profile.groupEnds.includes(boundary);
+            this._meterGroupLines.appendChild(SVG.line({
+                x1: x, x2: x, y1: 0, y2: this._editorHeight,
+                stroke: ColorConfig.secondaryText,
+                "stroke-width": isGroupEnd ? 2 : 1,
+                "stroke-opacity": isGroupEnd ? 0.82 : 0.48,
+            }));
+        }
     }
 
     private _updateRangeShade(): void {
