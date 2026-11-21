@@ -1935,6 +1935,7 @@ export class SongEditor {
             (prefs.enableChannelMuting ? "✓ " : "　") + "Enable Channel Muting",
             (prefs.displayBrowserUrl ? "✓ " : "　") + "Display Song Data in URL",
             (prefs.displayVolumeBar ? "✓ " : "　") + "Show Playback Volume",
+            "　Meter and Grouping... (G)",
             "　Set Layout...",
             "　Set Theme...",
             "　Set Up Note Recording...",
