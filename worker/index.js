@@ -1,11 +1,8 @@
-import { passwordGate } from "./password-gate.js";
 const json=(status,data)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff"}});
 export default {
   async fetch(request,env) {
     const url=new URL(request.url);
     if(url.protocol==="http:"){url.protocol="https:";return Response.redirect(url.toString(),301);}
-    const denied=await passwordGate(request,env);
-    if(denied)return denied;
     if(url.pathname.startsWith("/api/")){
       if(request.method!=="POST")return json(405,{error:"Use POST."});
       if(request.headers.get("origin")!==url.origin)return json(403,{error:"This request must come from this site."});
