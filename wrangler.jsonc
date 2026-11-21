@@ -12,6 +12,11 @@
   "ratelimits": [
     { "name": "LOOP_USER_LIMIT", "namespace_id": "2026111601", "simple": { "limit": 4, "period": 60 } }
   ],
+  "previews": {
+    "ratelimits": [
+      { "name": "LOOP_USER_LIMIT", "namespace_id": "2026112105", "simple": { "limit": 4, "period": 60 } }
+    ]
+  },
   "services": [
     { "binding": "BETASOUNDLABS", "service": "betasoundlabs" }
   ],
