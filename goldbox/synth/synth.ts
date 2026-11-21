@@ -2852,14 +2852,29 @@ public getTunedFrequencyFromPitch(pitch: number): number {
         const url: URL = new URL(baseUrl);
         url.searchParams.delete("betaroxTuning");
         url.searchParams.delete("bn");
+        url.searchParams.delete("betaroxMuted");
         if (this.pitchesPerOctave == 12 && (this.temperament != 0 || this.referenceA4Hz != 440)) {
             url.searchParams.set("betaroxTuning", "1," + this.temperament + "," + this.referenceA4Hz);
         }
         if (includeChannelNames && this.channels.some(channel => channel.name !== "")) {
             url.searchParams.set("bn", JSON.stringify(this.channels.map(channel => channel.name)));
         }
+        const mutedChannels = this.channels.map((channel, index) => channel.muted ? index : -1).filter(index => index >= 0);
+        if (mutedChannels.length > 0) url.searchParams.set("betaroxMuted", mutedChannels.join(","));
         url.hash = this.toBase64String(false, false);
         return url.href;
+    }
+
+    public static applyMuteStateFromUrl(song: Song, href: string): void {
+        for (const channel of song.channels) channel.muted = false;
+        let raw: string | null = null;
+        try { raw = new URL(href).searchParams.get("betaroxMuted"); } catch (_) { return; }
+        if (!raw) return;
+        for (const value of raw.split(",")) {
+            if (!/^(0|[1-9][0-9]*)$/.test(value)) continue;
+            const index = Number(value);
+            if (Number.isSafeInteger(index) && index < song.channels.length) song.channels[index].muted = true;
+        }
     }
 
     private static _readChannelNames(raw: string | null): string[] | null {

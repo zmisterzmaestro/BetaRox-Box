@@ -3489,6 +3489,7 @@ export class SongEditor {
                 if (needControlForShortcuts == (event.ctrlKey || event.metaKey)) {
                     if (this._doc.prefs.enableChannelMuting) {
                         this._doc.selection.muteChannels(event.shiftKey);
+                        this._doc.syncMuteStateToUrl();
                         event.preventDefault();
                     }
                 }
@@ -3576,6 +3577,7 @@ export class SongEditor {
                         } else {
                             this._doc.selection.soloChannels(false);
                         }
+                        this._doc.syncMuteStateToUrl();
                         event.preventDefault();
                     }
                 }
@@ -4413,6 +4415,7 @@ export class SongEditor {
             case "enableChannelMuting":
                 this._doc.prefs.enableChannelMuting = !this._doc.prefs.enableChannelMuting;
                 for (const channel of this._doc.song.channels) channel.muted = false;
+                this._doc.syncMuteStateToUrl();
                 break;
             case "displayBrowserUrl":
                 this._doc.toggleDisplayBrowserUrl();

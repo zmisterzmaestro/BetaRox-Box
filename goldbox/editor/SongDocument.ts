@@ -77,6 +77,7 @@ export class SongDocument {
 			songString = this._getHash();
 		}
 		this.song = new Song(songString);
+		Song.applyMuteStateFromUrl(this.song, window.location.href);
 		if (songString == "" || songString == undefined) {
 			setDefaultInstruments(this.song);
 			this.song.scale = this.prefs.defaultScale;
@@ -144,9 +145,22 @@ export class SongDocument {
 		}
 	}
 		
+	private _compatibleUrlForState(hash: string): string {
+		const stateSong: Song = new Song(hash);
+		for (let i: number = 0; i < Math.min(stateSong.getChannelCount(), this.song.getChannelCount()); i++) {
+			stateSong.channels[i].muted = this.song.channels[i].muted;
+		}
+		return stateSong.toCompatibleUrl(window.location.href);
+	}
+
+	public syncMuteStateToUrl(): void {
+		if (!this.prefs.displayBrowserUrl) return;
+		window.history.replaceState(window.history.state, "", this.song.toCompatibleUrl(window.location.href));
+	}
+
 	private _replaceState(state: HistoryState, hash: string): void {
 		if (this.prefs.displayBrowserUrl) {
-			window.history.replaceState(state, "", new Song(hash).toCompatibleUrl(window.location.href));
+			window.history.replaceState(state, "", this._compatibleUrlForState(hash));
 		} else {
 			window.sessionStorage.setItem(window.sessionStorage.getItem("currentUndoIndex") || "0", JSON.stringify({state, hash}));
 			window.history.replaceState(null, "", location.pathname);
@@ -155,7 +169,7 @@ export class SongDocument {
 		
 	private _pushState(state: HistoryState, hash: string): void {
 		if (this.prefs.displayBrowserUrl) {
-			window.history.pushState(state, "", new Song(hash).toCompatibleUrl(window.location.href));
+			window.history.pushState(state, "", this._compatibleUrlForState(hash));
 		} else {
 			let currentIndex: number = Number(window.sessionStorage.getItem("currentUndoIndex"));
 			let oldestIndex: number = Number(window.sessionStorage.getItem("oldestUndoIndex"));
@@ -216,6 +230,7 @@ export class SongDocument {
 			this._resetSongRecoveryUid();
 			const state: HistoryState = {canUndo: true, sequenceNumber: this._sequenceNumber, bar: this.bar, channel: this.channel, instrument: this.viewedInstrument[this.channel], recoveryUid: this._recoveryUid, prompt: null, selection: this.selection.toJSON()};
 			new ChangeSong(this, Song.songStringFromUrl(window.location.href));
+			Song.applyMuteStateFromUrl(this.song, window.location.href);
 			this.prompt = state.prompt;
 			if (this.prefs.displayBrowserUrl) {
 				this._replaceState(state, this.song.toBase64String());
@@ -242,6 +257,7 @@ export class SongDocument {
 		this._sequenceNumber = state.sequenceNumber;
 		this.prompt = state.prompt;
 		new ChangeSong(this, this._getHash());
+		Song.applyMuteStateFromUrl(this.song, window.location.href);
 			
 		this._recoveryUid = state.recoveryUid;
 		this.selection.fromJSON(state.selection);

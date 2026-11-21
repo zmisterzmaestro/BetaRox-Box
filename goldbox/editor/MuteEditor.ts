@@ -122,6 +122,7 @@ export class MuteEditor {
 				break;
 			case "chnMute":
 				this._doc.song.channels[this._channelDropDownChannel].muted = !this._doc.song.channels[this._channelDropDownChannel].muted;
+				this._doc.syncMuteStateToUrl();
 				this.render();
 				break;
 			case "chnSolo": {
@@ -143,6 +144,7 @@ export class MuteEditor {
 						this._doc.song.channels[channel].muted = false;
 					}
 				}
+				this._doc.syncMuteStateToUrl();
 				this.render();
 				break;
 			}
@@ -171,6 +173,7 @@ export class MuteEditor {
 		let xPos: number = event.clientX - this._buttons[0].getBoundingClientRect().left;
 		if (xPos < 21.0) {
 			this._doc.song.channels[index].muted = !this._doc.song.channels[index].muted;
+			this._doc.syncMuteStateToUrl();
 		}
 		this._doc.notifier.changed();
 	}

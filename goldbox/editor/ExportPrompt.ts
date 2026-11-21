@@ -231,8 +231,22 @@ export class ExportPrompt implements Prompt {
     private _export = (): void => {
         if (this.outputStarted == true)
             return;
-        window.localStorage.setItem("exportFormat", this._formatSelect.value);
-        switch (this._formatSelect.value) {
+        const format = this._formatSelect.value;
+        if (format === "wav" || format === "mp3") {
+            const audibleChannelCount = this._doc.song.pitchChannelCount + this._doc.song.noiseChannelCount;
+            const mutedTracks = this._doc.song.channels
+                .slice(0, audibleChannelCount)
+                .map((channel, index) => channel.muted ? (channel.name.trim() || "Track " + (index + 1)) : "")
+                .filter(name => name !== "");
+            if (mutedTracks.length > 0) {
+                const summary = mutedTracks.length <= 6
+                    ? "\n\nMuted tracks: " + mutedTracks.join(", ")
+                    : "\n\n" + mutedTracks.length + " tracks are muted.";
+                if (!window.confirm("Some tracks are muted. This " + format.toUpperCase() + " export will omit them." + summary + "\n\nContinue exporting?")) return;
+            }
+        }
+        window.localStorage.setItem("exportFormat", format);
+        switch (format) {
             case "wav":
                 this.outputStarted = true;
                 this._exportTo("wav");
