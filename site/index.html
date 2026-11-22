@@ -7,14 +7,24 @@
   <link rel="icon" type="image/svg+xml" href="/betarox-icon.svg">
   <title>BetaRox</title>
   <style>
-    :root{color-scheme:dark}
-    body{margin:0;min-height:100vh;display:grid;place-items:center;background:#121218;color:#eee;font:16px/1.5 system-ui,sans-serif}
-    main{width:min(34rem,calc(100% - 3rem));padding:2rem;box-sizing:border-box;border:1px solid #393946;border-radius:12px;background:#1d1d27;text-align:center}
-    h1{margin:.2rem 0;color:#e7c56c}
-    p{color:#c8c8d0}
-    a{display:inline-block;margin:.5rem;padding:.65rem 1.1rem;border:1px solid #777;border-radius:6px;color:#eee;text-decoration:none}
-    a.primary{background:#e7c56c;border-color:#e7c56c;color:#161616;font-weight:600}
-    small{display:block;margin-top:1.5rem;color:#999}
+    :root{
+      color-scheme:dark;
+      --page-margin:#010c03;
+      --editor-background:#010c03;
+      --primary-text:#eeffee;
+      --secondary-text:#9bc49b;
+      --link-accent:#99ff88;
+      --ui-widget-background:#203829;
+      --ui-widget-focus:#487860;
+      --input-box-outline:#224422;
+    }
+    body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--page-margin);color:var(--primary-text);font:16px/1.5 system-ui,sans-serif}
+    main{width:min(34rem,calc(100% - 3rem));padding:2rem;box-sizing:border-box;border:1px solid var(--input-box-outline);border-radius:12px;background:var(--ui-widget-background);text-align:center}
+    h1{margin:.2rem 0;color:var(--link-accent)}
+    p{color:var(--secondary-text)}
+    a{display:inline-block;margin:.5rem;padding:.65rem 1.1rem;border:1px solid var(--input-box-outline);border-radius:6px;color:var(--primary-text);text-decoration:none}
+    a.primary{background:var(--link-accent);border-color:var(--link-accent);color:#102010;font-weight:600}
+    small{display:block;margin-top:1.5rem;color:var(--secondary-text)}
   </style>
 </head>
 <body><main>
