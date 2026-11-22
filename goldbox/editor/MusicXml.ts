@@ -2,6 +2,7 @@
 // Standard 12-TET pitches, one notated part per pitched channel.
 // Each editor beat becomes a quarter (simple) or dotted quarter (compound).
 import {Song} from "../synth/synth";
+import {meterSignature} from "../synth/Meter";
 
 const spellings: [string,number][] = [["C",0],["C",1],["D",0],["D",1],["E",0],["F",0],["F",1],["G",0],["G",1],["A",0],["A",1],["B",0]];
 function esc(value: unknown): string {
@@ -22,7 +23,9 @@ type Span = {start:number,end:number,pitches:number[]};
 export function makeMusicXml(song: Song, compound: boolean, intro: boolean, loops: number, outro: boolean, fine: boolean = false): string {
     if (song.pitchesPerOctave!==12) throw new Error("MusicXML export currently supports twelve-note tuning only.");
     const data:any = song.toJsonObject(intro,loops,outro);
-    const unit=compound?3:fine?8:4, divisions=compound?2:unit, beats=song.beatsPerBar, capacity=beats*unit;
+    const profile=song.meterProfile;
+    const signature=profile?meterSignature(profile):null;
+    const unit=profile?8:compound?3:fine?8:4, divisions=profile?8:compound?2:unit, beats=song.beatsPerBar, capacity=Math.round(beats*unit);
     const base=song.keys[song.key].basePitch;
     const channels:any[]=data.channels.filter((c:any)=>c.type==="pitch" && c.sequence.some((n:number)=>n>0 && c.patterns[n-1]?.notes.some((note:any)=>note.pitches.length>0)));
     if (!channels.length) throw new Error("There are no pitched notes to notate.");
@@ -39,8 +42,8 @@ export function makeMusicXml(song: Song, compound: boolean, intro: boolean, loop
         c.sequence.forEach((patternNumber:number, bar:number)=>{
             xml+='<measure number="'+(bar+1)+'">';
             if(bar===0){
-                xml+='<attributes><divisions>'+divisions+'</divisions><time><beats>'+(compound?beats*3:beats)+'</beats><beat-type>'+(compound?8:4)+'</beat-type></time><clef>'+clef+'</clef></attributes>';
-                xml+='<direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit>'+(compound?'<beat-unit-dot/>':'')+'<per-minute>'+song.tempo+'</per-minute></metronome></direction-type><sound tempo="'+(song.tempo*(compound?1.5:1))+'"/></direction>';
+                xml+='<attributes><divisions>'+divisions+'</divisions><time><beats>'+(signature?signature.numerator:compound?beats*3:beats)+'</beats><beat-type>'+(signature?signature.denominator:compound?8:4)+'</beat-type></time><clef>'+clef+'</clef></attributes>';
+                xml+='<direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit>'+(!profile&&compound?'<beat-unit-dot/>':'')+'<per-minute>'+song.tempo+'</per-minute></metronome></direction-type><sound tempo="'+(song.tempo*(!profile&&compound?1.5:1))+'"/></direction>';
             }
             const notes:any[]=patternNumber>0?c.patterns[patternNumber-1]?.notes||[]:[];
             const spans:Span[]=notes.filter(n=>n.points?.length>=2&&n.pitches?.length).map(n=>{
@@ -53,12 +56,12 @@ export function makeMusicXml(song: Song, compound: boolean, intro: boolean, loop
                 let t=start;
                 while(t<end){
                     let stop=Math.min(end,(Math.floor(t/unit)+1)*unit);
-                    if(fine&&!compound){const remaining=stop-t;const allowed=[8,6,4,3,2,1];const length=allowed.find(n=>n<=remaining)!;stop=t+length;}
+                    if((fine&&!compound)||profile){const remaining=stop-t;const allowed=[8,6,4,3,2,1];const length=allowed.find(n=>n<=remaining)!;stop=t+length;}
                     const len=stop-t, tieStop=pitches.length>0&&t>start,tieStart=pitches.length>0&&stop<end;
                     const ties=(tieStop?'<tie type="stop"/>':'')+(tieStart?'<tie type="start"/>':'');
                     const notation=(tieStop||tieStart)?'<notations>'+(tieStop?'<tied type="stop"/>':'')+(tieStart?'<tied type="start"/>':'')+'</notations>':'';
                     (pitches.length?pitches:[-1]).forEach((p,j)=>{
-                        xml+='<note>'+(j?'<chord/>':'')+(p<0?'<rest/>':pitchXml(p))+'<duration>'+len+'</duration>'+ties+'<voice>1</voice>'+durationType(len,compound,fine)+notation+'</note>';
+                        xml+='<note>'+(j?'<chord/>':'')+(p<0?'<rest/>':pitchXml(p))+'<duration>'+len+'</duration>'+ties+'<voice>1</voice>'+durationType(len,profile?false:compound,profile?true:fine)+notation+'</note>';
                     });
                     t=stop;
                 }
