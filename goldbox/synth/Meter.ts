@@ -21,6 +21,15 @@ export interface MeterProfile {
     groupEnds: number[];
 }
 
+export interface MeterSignature {
+    /** The conventional numerator shown in the time signature. */
+    numerator: number;
+    /** The conventional denominator shown in the time signature. */
+    denominator: number;
+    /** Group lengths expressed in denominator-note units. */
+    groups: number[];
+}
+
 export interface MeterPreset {
     id: string;
     label: string;
@@ -85,6 +94,38 @@ export function meterGroupBoundaryParts(profile: MeterProfile): number[] {
         .sort((a, b) => a - b)
         .filter((end, index, ends) => index == 0 || end != ends[index - 1])
         .map(end => meterColumnStartParts(profile, end));
+}
+
+/**
+ * Describe a flexible meter using the smallest power-of-two note value that
+ * can express every column exactly. Dots therefore increase the required
+ * denominator: a dotted quarter contributes three eighth-note units, and a
+ * double-dotted quarter contributes seven sixteenth-note units.
+ */
+export function meterSignature(profile: MeterProfile): MeterSignature {
+    const normalized: MeterProfile | null = normalizeMeterProfile(profile);
+    if (!normalized) throw new Error("Invalid meter profile.");
+    const denominator: number = normalized.columns.reduce((largest, column) => {
+        const dotFactor: number = column.dots == 0 ? 1 : column.dots == 1 ? 2 : 4;
+        return Math.max(largest, column.denominator * dotFactor);
+    }, 1);
+    const columnUnits: number[] = normalized.columns.map(column => {
+        const numerator: number = column.dots == 0 ? 1 : column.dots == 1 ? 3 : 7;
+        const dotDivisor: number = column.dots == 0 ? 1 : column.dots == 1 ? 2 : 4;
+        return denominator / column.denominator * numerator / dotDivisor;
+    });
+    const ends: number[] = [...normalized.groupEnds, normalized.columns.length];
+    const groups: number[] = [];
+    let start: number = 0;
+    for (const end of ends) {
+        groups.push(columnUnits.slice(start, end).reduce((total, units) => total + units, 0));
+        start = end;
+    }
+    const numerator: number = groups.reduce((total, units) => total + units, 0);
+    if (!Number.isInteger(numerator) || groups.some(group => !Number.isInteger(group))) {
+        throw new Error("Meter profile cannot be represented as a standard time signature.");
+    }
+    return { numerator, denominator, groups };
 }
 
 export function createMeterPreset(preset: MeterPreset): MeterProfile {
