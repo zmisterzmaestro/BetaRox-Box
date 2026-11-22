@@ -10,6 +10,7 @@ import { makeMusicXml } from "./MusicXml";
 import { HTML } from "imperative-html/dist/esm/elements-strict";
 import { ArrayBufferWriter } from "./ArrayBufferWriter";
 import { MidiChunkType, MidiFileFormat, MidiControlEventMessage, MidiEventType, MidiMetaEventMessage, MidiRegisteredParameterNumberMSB, MidiRegisteredParameterNumberLSB, volumeMultToMidiVolume, volumeMultToMidiExpression, defaultMidiPitchBend, defaultMidiExpression } from "./Midi";
+import { meterSignature } from "../synth/Meter";
 
 const { button, div, h2, input, select, option } = HTML;
 
@@ -924,7 +925,8 @@ export class ExportPrompt implements Prompt {
     }
 
     private _exportToMusicXml(compound: boolean, fine: boolean): void {
-        const meter = compound ? (this._doc.song.beatsPerBar*3)+"/8" : this._doc.song.beatsPerBar+"/4";
+        const profileSignature = this._doc.song.meterProfile ? meterSignature(this._doc.song.meterProfile) : null;
+        const meter = profileSignature ? profileSignature.numerator+"/"+profileSignature.denominator : compound ? (this._doc.song.beatsPerBar*3)+"/8" : this._doc.song.beatsPerBar+"/4";
         if (!window.confirm("Export simplified sheet music in "+meter+"? Pitched tracks only. Pitch bends, instrument effects and alternative tuning are not represented. Timing is quantized in the exported score; your song stays unchanged.")) return;
         try {
             const xml = makeMusicXml(this._doc.song, compound, this._enableIntro.checked, Math.max(1, Number(this._loopDropDown.value)||1), this._enableOutro.checked, fine);
