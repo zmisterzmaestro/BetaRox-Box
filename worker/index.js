@@ -22,8 +22,10 @@ export default {
     if (isLab && env.BETASOUNDLABS_SPECTRAL_PREVIEW_URL) {
       // Worker Previews cannot bind to another Worker's matching Preview, so
       // route this integration branch through the Lab Preview over HTTPS.
+      // The editor's /editor/player path maps to the Lab site's /spectral-lab page.
       // Production has no such variable and continues to use the service binding.
-      const previewUrl = new URL(url.pathname + url.search, env.BETASOUNDLABS_SPECTRAL_PREVIEW_URL);
+      const previewPath = url.pathname.replace(/^\/editor\/player(?=\/|$)/, "/spectral-lab");
+      const previewUrl = new URL(previewPath + url.search, env.BETASOUNDLABS_SPECTRAL_PREVIEW_URL);
       asset = await fetch(new Request(previewUrl, request));
     } else {
       const assetService = isLab ? env.BETASOUNDLABS : env.ASSETS;
