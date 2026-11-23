@@ -11,7 +11,7 @@ export default {
       headers.set("x-betarox-client-ip",request.headers.get("cf-connecting-ip")||"unknown");
       return env.BETASOUNDLABS.fetch(new Request(request,{headers}));
     }
-    const isLab = /^\\/(?:editor\\/player|spectral-lab|score)(?:\\/|$)/.test(url.pathname);
+    const isLab = /^\/(?:editor\/player|spectral-lab|score)(?:\/|$)/.test(url.pathname);
     if (isLab && request.method !== "GET" && request.method !== "HEAD") {
       return new Response("Use GET or HEAD.", { status: 405, headers: { Allow: "GET, HEAD" } });
     }
