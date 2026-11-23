@@ -11,15 +11,24 @@ export default {
       headers.set("x-betarox-client-ip",request.headers.get("cf-connecting-ip")||"unknown");
       return env.BETASOUNDLABS.fetch(new Request(request,{headers}));
     }
-    const isLab = /^\/(?:editor\/player|spectral-lab|score)(?:\/|$)/.test(url.pathname);
+    const isLab = /^\\/(?:editor\\/player|spectral-lab|score)(?:\\/|$)/.test(url.pathname);
     if (isLab && request.method !== "GET" && request.method !== "HEAD") {
       return new Response("Use GET or HEAD.", { status: 405, headers: { Allow: "GET, HEAD" } });
     }
-    if (isLab && !env.BETASOUNDLABS) {
+    if (isLab && !env.BETASOUNDLABS && !env.BETASOUNDLABS_SPECTRAL_PREVIEW_URL) {
       return json(503, { error: "The BetaSoundLabs service is not connected yet." });
     }
-    const assetService = isLab ? env.BETASOUNDLABS : env.ASSETS;
-    const asset = await assetService.fetch(request);
+    let asset;
+    if (isLab && env.BETASOUNDLABS_SPECTRAL_PREVIEW_URL) {
+      // Worker Previews cannot bind to another Worker's matching Preview, so
+      // route this integration branch through the Lab Preview over HTTPS.
+      // Production has no such variable and continues to use the service binding.
+      const previewUrl = new URL(url.pathname + url.search, env.BETASOUNDLABS_SPECTRAL_PREVIEW_URL);
+      asset = await fetch(new Request(previewUrl, request));
+    } else {
+      const assetService = isLab ? env.BETASOUNDLABS : env.ASSETS;
+      asset = await assetService.fetch(request);
+    }
     const response=new Response(asset.body,asset);
     response.headers.set("Strict-Transport-Security","max-age=31536000");
     return response;
