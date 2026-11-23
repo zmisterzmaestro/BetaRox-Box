@@ -167,7 +167,29 @@ const enum SongTagCode {
     pulseWidth = CharCode.W, // added in 7
     instrumentOctave = CharCode.Y, // BetaRox optional octave offset
     aliases = CharCode.X, // [JB], added in 4, DEPRECATED
+    capabilities = CharCode.UNDERSCORE, // BetaRox optional, version 7: versioned instrument capability JSON.
 
+}
+
+export interface InstrumentCapability {
+    id: string;
+    version: number;
+    data: any;
+}
+
+function copyInstrumentCapabilities(value: any): InstrumentCapability[] {
+    if (value == undefined) return [];
+    if (!Array.isArray(value)) throw new Error("Instrument capabilities must be an array.");
+    return value.map((capability: any) => {
+        if (capability == null || typeof capability != "object" || Array.isArray(capability) ||
+            typeof capability.id != "string" || capability.id.length == 0 ||
+            !Number.isInteger(capability.version) || capability.version < 1 ||
+            capability.data == null || typeof capability.data != "object") {
+            throw new Error("Invalid instrument capability record.");
+        }
+        // Keep unsupported capability payloads opaque, but ensure they remain JSON-safe.
+        return JSON.parse(JSON.stringify(capability));
+    });
 }
 
 const base64IntToCharCode: ReadonlyArray<number> = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 45, 95];
@@ -1447,6 +1469,8 @@ interface LegacySettings {
 
 export class Instrument {
     public get isNoiseInstrument(): boolean { return this.type == InstrumentType.noise || this.type == InstrumentType.drumset; }
+    // Optional, versioned features. Unknown records are retained without being interpreted.
+    public capabilities: InstrumentCapability[] = [];
     public type: InstrumentType = InstrumentType.chip;
     public preset: number = 0;
     public chipWave: number = 2;
@@ -1567,6 +1591,7 @@ export class Instrument {
     public setTypeAndReset(type: InstrumentType, isNoiseChannel: boolean, isModChannel: boolean): void {
         // Mod channels are forced to one type.
         if (isModChannel) type = InstrumentType.mod;
+        this.capabilities = [];
         this.type = type;
         this.preset = type;
         this.volume = 0;
@@ -2006,6 +2031,9 @@ export class Instrument {
             envelopes.push(this.envelopes[i].toJsonObject());
         }
         instrumentObject["envelopes"] = envelopes;
+        if (this.capabilities.length > 0) {
+            instrumentObject["capabilities"] = copyInstrumentCapabilities(this.capabilities);
+        }
 
         return instrumentObject;
     }
@@ -2013,6 +2041,7 @@ export class Instrument {
 
     public fromJsonObject(instrumentObject: any, isNoiseChannel: boolean, isModChannel: boolean, useSlowerRhythm: boolean, useFastTwoNoteArp: boolean, legacyGlobalReverb: number = 0): void {
         if (instrumentObject == undefined) instrumentObject = {};
+        const capabilities: InstrumentCapability[] = copyInstrumentCapabilities(instrumentObject["capabilities"]);
 
         let type: InstrumentType = Config.instrumentTypeNames.indexOf(instrumentObject["type"]);
         if (<any>type == -1) type = isModChannel ? InstrumentType.mod : (isNoiseChannel ? InstrumentType.noise : InstrumentType.chip);
@@ -2507,6 +2536,7 @@ export class Instrument {
                 }
             }
         }
+        this.capabilities = capabilities;
     }
 
     public static frequencyFromPitch(pitch: number): number {
@@ -2614,6 +2644,7 @@ export class Song {
     private static readonly _latestJummBoxVersion: number = 5;
     private static readonly _oldestGoldBoxVersion: number = 1;
     private static readonly _latestGoldBoxVersion: number = 6;
+    private static readonly _capabilitySongVersion: number = 7;
     // One-character variant detection at the start of URL to distinguish variants such as JummBox, Or Goldbox. "j" and "g" respectively
     private static readonly _variant = 0x67; //"g" ~ goldbox
 
@@ -2936,9 +2967,13 @@ public getTunedFrequencyFromPitch(pitch: number): number {
     public toBase64String(includeTuning: boolean = true, includeChannelNames: boolean = true): string {
         let bits: BitFieldWriter;
         let buffer: number[] = [];
+        const hasCapabilities: boolean = this.channels.some(channel => channel.instruments.some(instrument => instrument.capabilities.length > 0));
 
-        buffer.push(this.pitchesPerOctave == 14 ? CharCode.T : includeTuning && (this.temperament != 0 || this.referenceA4Hz != 440) ? CharCode.B : Song._variant);
-        buffer.push(base64IntToCharCode[this.channels.some(c => c.instruments.some(i => i.octaveOffset !== 0 || i.envelopeCount > 0)) ? Song._latestGoldBoxVersion : 4]);
+        buffer.push(this.pitchesPerOctave == 14 ? CharCode.T : hasCapabilities || (includeTuning && (this.temperament != 0 || this.referenceA4Hz != 440)) ? CharCode.B : Song._variant);
+        // Preserve every existing version byte for ordinary songs. Version 7 opts into the
+        // new BetaRox-only capability tag; version 6 remains the legacy instrument extension.
+        const legacyInstrumentFeatures: boolean = this.channels.some(c => c.instruments.some(i => i.octaveOffset !== 0 || i.envelopeCount > 0));
+        buffer.push(base64IntToCharCode[hasCapabilities ? Song._capabilitySongVersion : legacyInstrumentFeatures ? 6 : 4]);
 
         // Length of the song name string
         buffer.push(SongTagCode.songTitle);
@@ -3279,6 +3314,19 @@ public getTunedFrequencyFromPitch(pitch: number): number {
                         buffer.push(base64IntToCharCode[envelope.waveform]);
                     }
                 }
+                if (instrument.capabilities.length > 0) {
+                    const encodedCapabilities: string = encodeURIComponent(JSON.stringify(copyInstrumentCapabilities(instrument.capabilities)));
+                    // Three base-64 digits allow a payload up to 256 KiB while keeping the
+                    // compact link parser bounded and independent of JSON delimiters.
+                    if (encodedCapabilities.length > 0x3ffff) throw new Error("Instrument capability data is too large for a compact song link.");
+                    buffer.push(SongTagCode.capabilities,
+                        base64IntToCharCode[(encodedCapabilities.length >> 12) & 0x3f],
+                        base64IntToCharCode[(encodedCapabilities.length >> 6) & 0x3f],
+                        base64IntToCharCode[encodedCapabilities.length & 0x3f]);
+                    for (let capabilityIndex: number = 0; capabilityIndex < encodedCapabilities.length; capabilityIndex++) {
+                        buffer.push(encodedCapabilities.charCodeAt(capabilityIndex));
+                    }
+                }
             }
         }
 
@@ -3564,7 +3612,7 @@ public getTunedFrequencyFromPitch(pitch: number): number {
         const version: number = base64CharCodeToInt[compressed.charCodeAt(charIndex++)];
         if (fromBeepBox && (version == -1 || version > Song._latestBeepboxVersion || version < Song._oldestBeepboxVersion)) return;
         if (fromJummBox && (version == -1 || version > Song._latestJummBoxVersion || version < Song._oldestJummBoxVersion)) return;
-        if (fromGoldBox && (version == -1 || version > Song._latestGoldBoxVersion || version < Song._oldestGoldBoxVersion)) return;
+        if (fromGoldBox && (version == -1 || version > Song._latestGoldBoxVersion && !(fromBetaRox && version == Song._capabilitySongVersion) || version < Song._oldestGoldBoxVersion)) return;
         const beforeTwo: boolean = version < 2;
         const beforeThree: boolean = version < 3;
         const beforeFour: boolean = version < 4;
@@ -4838,6 +4886,17 @@ public getTunedFrequencyFromPitch(pitch: number): number {
                 }
             }
                 break;
+            case SongTagCode.capabilities: {
+                if (!fromBetaRox || version < 7) throw new Error("Unsupported instrument capability song tag.");
+                const encodedLength: number = (base64CharCodeToInt[compressed.charCodeAt(charIndex++)] << 12) |
+                    (base64CharCodeToInt[compressed.charCodeAt(charIndex++)] << 6) |
+                    base64CharCodeToInt[compressed.charCodeAt(charIndex++)];
+                if (encodedLength < 0 || charIndex + encodedLength > compressed.length) throw new Error("Invalid instrument capability payload length.");
+                const encodedCapabilities: string = compressed.substring(charIndex, charIndex + encodedLength);
+                charIndex += encodedLength;
+                const parsedCapabilities: any = JSON.parse(decodeURIComponent(encodedCapabilities));
+                this.channels[instrumentChannelIterator].instruments[instrumentIndexIterator].capabilities = copyInstrumentCapabilities(parsedCapabilities);
+            } break;
             case SongTagCode.bars: {
                 let subStringLength: number;
                 if (beforeThree && fromBeepBox) {
