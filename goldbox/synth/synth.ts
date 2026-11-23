@@ -177,10 +177,12 @@ export interface InstrumentCapability {
     data: any;
 }
 
+const maxInstrumentCapabilityPayloadLength: number = 0x3ffff;
+
 function copyInstrumentCapabilities(value: any): InstrumentCapability[] {
     if (value == undefined) return [];
     if (!Array.isArray(value)) throw new Error("Instrument capabilities must be an array.");
-    return value.map((capability: any) => {
+    const capabilities: InstrumentCapability[] = value.map((capability: any) => {
         if (capability == null || typeof capability != "object" || Array.isArray(capability) ||
             typeof capability.id != "string" || capability.id.length == 0 ||
             !Number.isInteger(capability.version) || capability.version < 1 ||
@@ -190,6 +192,11 @@ function copyInstrumentCapabilities(value: any): InstrumentCapability[] {
         // Keep unsupported capability payloads opaque, but ensure they remain JSON-safe.
         return JSON.parse(JSON.stringify(capability));
     });
+    const encodedLength: number = encodeURIComponent(JSON.stringify(capabilities)).length;
+    if (encodedLength > maxInstrumentCapabilityPayloadLength) {
+        throw new Error("Instrument capability data is too large for BetaRox compact song history. Reduce the capability data before importing it.");
+    }
+    return capabilities;
 }
 
 const base64IntToCharCode: ReadonlyArray<number> = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 45, 95];
@@ -3318,7 +3325,7 @@ public getTunedFrequencyFromPitch(pitch: number): number {
                     const encodedCapabilities: string = encodeURIComponent(JSON.stringify(copyInstrumentCapabilities(instrument.capabilities)));
                     // Three base-64 digits allow a payload up to 256 KiB while keeping the
                     // compact link parser bounded and independent of JSON delimiters.
-                    if (encodedCapabilities.length > 0x3ffff) throw new Error("Instrument capability data is too large for a compact song link.");
+                    if (encodedCapabilities.length > maxInstrumentCapabilityPayloadLength) throw new Error("Instrument capability data is too large for BetaRox compact song history. Reduce the capability data before importing it.");
                     buffer.push(SongTagCode.capabilities,
                         base64IntToCharCode[(encodedCapabilities.length >> 12) & 0x3f],
                         base64IntToCharCode[(encodedCapabilities.length >> 6) & 0x3f],
