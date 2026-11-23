@@ -54,6 +54,17 @@ export class ImportPrompt implements Prompt {
 		if (extension == "json") {
 			const reader: FileReader = new FileReader();
 			reader.addEventListener("load", (event: Event): void => {
+				// Parse and serialize in isolation first. A malformed or oversized optional
+				// capability must not partially replace the song currently being edited.
+				try {
+					const importedSong: Song = new Song(<string>reader.result);
+					importedSong.toBase64String();
+				} catch (error) {
+					const detail: string = error instanceof Error ? error.message : String(error);
+					window.alert("Unable to import this song. The current song was left unchanged. " + detail);
+					this._fileInput.value = "";
+					return;
+				}
 				this._doc.prompt = null;
 				this._doc.goBackToStart();
 				this._doc.record(new ChangeSong(this._doc, <string>reader.result), true, true);
