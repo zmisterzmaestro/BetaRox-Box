@@ -52,6 +52,8 @@ Proposed compact encoding: add a new BetaRox-only tag carrying a length-prefixed
 
 The exact tag, length bound, encoding size, and migration policy require review before implementation. A large timeline may make URL encoding impractical; if so, the transport may need a bounded/quantized binary payload or a separate downloadable instrument format while keeping JSON as the full-fidelity form.
 
+Slarmoo's Box documents a user-facing fallback for long songs: its 1.4.15 patch notes describe link shortening (with wackybox.org as the default), optional export to an HTML file, and an error when a URL is too large. This is a sharing/accessibility strategy, not compression of the song payload. BetaRox could consider the same layered approach after the instrument format is bounded: retain compact song data where it works, offer HTML export as a portable alternative, and optionally provide link shortening. Before adopting an external shortener, verify its current availability, limits, and what song URL data it receives. [Slarmoo's Box 1.4.15 patch notes](https://slarmoo.github.io/slarmoosbox/website/patch_notes.html).
+
 ## Playback direction to evaluate
 
 One playback design to evaluate is to interpolate the frame values over elapsed note time and use them to update the harmonic profile and loudness while the note is active. Keep this as an additive playback path selected only when a supported timeline capability is present; all ordinary instruments continue through existing synthesis unchanged.
