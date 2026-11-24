@@ -16,6 +16,11 @@ declare global {
 }
 
 const epsilon: number = (1.0e-24); // For detecting and avoiding float denormals, which have poor performance.
+const spectralSineTableLength: number = 1 << 11;
+const spectralSineTable: Float32Array = new Float32Array(spectralSineTableLength + 1);
+for (let i: number = 0; i <= spectralSineTableLength; i++) {
+    spectralSineTable[i] = Math.sin(2 * Math.PI * i / spectralSineTableLength);
+}
 
 // For performance debugging:
 //let samplesAccumulated: number = 0;
@@ -167,7 +172,142 @@ const enum SongTagCode {
     pulseWidth = CharCode.W, // added in 7
     instrumentOctave = CharCode.Y, // BetaRox optional octave offset
     aliases = CharCode.X, // [JB], added in 4, DEPRECATED
+    capabilities = CharCode.UNDERSCORE, // BetaRox optional, version 7: versioned instrument capability JSON.
 
+}
+
+export interface InstrumentCapability {
+    id: string;
+    version: number;
+    data: any;
+}
+
+export interface SpectralTimelineFrame {
+    timeSeconds: number;
+    loudness: number;
+    harmonics: number[];
+    formantsHz: number[];
+}
+
+export interface SpectralTimelineData {
+    durationSeconds: number;
+    applyFormantFilters: boolean;
+    frames: SpectralTimelineFrame[];
+}
+
+export function sampleSpectralTimeline(data: SpectralTimelineData, elapsedSeconds: number, harmonicsOutput: Float32Array): number {
+    if (harmonicsOutput.length < Config.harmonicsControlPoints) {
+        throw new Error("Spectral timeline output buffer is too small.");
+    }
+
+    const safeElapsedSeconds: number = Number.isFinite(elapsedSeconds) ? elapsedSeconds : 0;
+    const timeSeconds: number = Math.max(0, Math.min(data.durationSeconds, safeElapsedSeconds));
+    let low: number = 0;
+    let high: number = data.frames.length - 1;
+    while (low < high) {
+        const middle: number = Math.ceil((low + high) * 0.5);
+        if (data.frames[middle].timeSeconds <= timeSeconds) low = middle;
+        else high = middle - 1;
+    }
+
+    const startFrame: SpectralTimelineFrame = data.frames[low];
+    const endFrame: SpectralTimelineFrame = data.frames[Math.min(low + 1, data.frames.length - 1)];
+    const frameDuration: number = endFrame.timeSeconds - startFrame.timeSeconds;
+    const frameRatio: number = frameDuration > 0 ? (timeSeconds - startFrame.timeSeconds) / frameDuration : 0;
+    for (let i: number = 0; i < Config.harmonicsControlPoints; i++) {
+        harmonicsOutput[i] = startFrame.harmonics[i] + (endFrame.harmonics[i] - startFrame.harmonics[i]) * frameRatio;
+    }
+    return startFrame.loudness + (endFrame.loudness - startFrame.loudness) * frameRatio;
+}
+
+const spectralTimelineCapabilityId: string = "betarox.spectral-timeline";
+const spectralTimelineCapabilityVersion: number = 1;
+const spectralTimelineFilterGainDb: number = 4.5;
+const spectralTimelineFilterQ: number = 4.0;
+
+function makeSpectralTimelinePeakFilter(frequencyHz: number, sampleRate: number): FilterCoefficients {
+    // RBJ peaking EQ coefficients matching the Spectral Lab Web Audio audition
+    // (peaking filter, Q=4, +4.5 dB).
+    const frequency: number = Math.max(50, Math.min(Math.min(12000, sampleRate * 0.49), frequencyHz));
+    const omega: number = 2 * Math.PI * frequency / sampleRate;
+    const amplitude: number = Math.pow(10, spectralTimelineFilterGainDb / 40);
+    const alpha: number = Math.sin(omega) / (2 * spectralTimelineFilterQ);
+    const a0: number = 1 + alpha / amplitude;
+    const result: FilterCoefficients = new FilterCoefficients();
+    result.b[0] = (1 + alpha * amplitude) / a0;
+    result.b[1] = (-2 * Math.cos(omega)) / a0;
+    result.b[2] = (1 - alpha * amplitude) / a0;
+    result.a[1] = result.b[1];
+    result.a[2] = (1 - alpha / amplitude) / a0;
+    result.order = 2;
+    return result;
+}
+
+function getSpectralTimelineData(instrument: Instrument): SpectralTimelineData | null {
+    const capability: InstrumentCapability | undefined = instrument.capabilities.find((item: InstrumentCapability): boolean =>
+        item.id == spectralTimelineCapabilityId && item.version == spectralTimelineCapabilityVersion);
+    return capability == undefined ? null : capability.data as SpectralTimelineData;
+}
+
+function validateSpectralTimelineData(value: any): void {
+    if (value == null || typeof value != "object" || Array.isArray(value) ||
+        !Number.isFinite(value.durationSeconds) || value.durationSeconds <= 0 || value.durationSeconds > 6 ||
+        typeof value.applyFormantFilters != "boolean" ||
+        !Array.isArray(value.frames) || value.frames.length == 0) {
+        throw new Error("Invalid spectral timeline: expected a positive duration and at least one frame.");
+    }
+
+    const durationTolerance: number = Math.max(1.0, value.durationSeconds) * 1.0e-9;
+    let previousTime: number = -1;
+    for (let frameIndex: number = 0; frameIndex < value.frames.length; frameIndex++) {
+        const frame: any = value.frames[frameIndex];
+        if (frame == null || typeof frame != "object" || Array.isArray(frame) ||
+            !Number.isFinite(frame.timeSeconds) || frame.timeSeconds < 0 || frame.timeSeconds > value.durationSeconds + durationTolerance ||
+            (frameIndex == 0 && frame.timeSeconds != 0) || frame.timeSeconds <= previousTime ||
+            !Number.isFinite(frame.loudness) || frame.loudness < 0 || frame.loudness > 1 ||
+            !Array.isArray(frame.harmonics) || frame.harmonics.length != Config.harmonicsControlPoints ||
+            !Array.isArray(frame.formantsHz) || frame.formantsHz.length != 3) {
+            throw new Error("Invalid spectral timeline frame: expected ordered times, normalized loudness, 28 harmonic values, and three formant frequencies.");
+        }
+        for (const harmonic of frame.harmonics) {
+            if (!Number.isFinite(harmonic) || harmonic < 0 || harmonic > 1) {
+                throw new Error("Invalid spectral timeline frame: harmonic values must be normalized numbers from 0 to 1.");
+            }
+        }
+        for (const frequency of frame.formantsHz) {
+            if (!Number.isFinite(frequency) || frequency < 50 || frequency > 12000) {
+                throw new Error("Invalid spectral timeline frame: formant frequencies must be between 50 and 12000 Hz.");
+            }
+        }
+        previousTime = frame.timeSeconds;
+    }
+}
+
+const maxInstrumentCapabilityPayloadLength: number = 0x3ffff;
+
+function copyInstrumentCapabilities(value: any): InstrumentCapability[] {
+    if (value == undefined) return [];
+    if (!Array.isArray(value)) throw new Error("Instrument capabilities must be an array.");
+    const capabilities: InstrumentCapability[] = value.map((capability: any) => {
+        if (capability == null || typeof capability != "object" || Array.isArray(capability) ||
+            typeof capability.id != "string" || capability.id.length == 0 ||
+            !Number.isInteger(capability.version) || capability.version < 1 ||
+            capability.data == null || typeof capability.data != "object") {
+            throw new Error("Invalid instrument capability record.");
+        }
+        // Keep unsupported capability payloads opaque, but validate the data shape
+        // for the one capability version BetaRox currently defines.
+        const copiedCapability: InstrumentCapability = JSON.parse(JSON.stringify(capability));
+        if (copiedCapability.id == spectralTimelineCapabilityId && copiedCapability.version == spectralTimelineCapabilityVersion) {
+            validateSpectralTimelineData(copiedCapability.data);
+        }
+        return copiedCapability;
+    });
+    const encodedLength: number = encodeURIComponent(JSON.stringify(capabilities)).length;
+    if (encodedLength > maxInstrumentCapabilityPayloadLength) {
+        throw new Error("Instrument capability data is too large for BetaRox compact song history. Reduce the capability data before importing it.");
+    }
+    return capabilities;
 }
 
 const base64IntToCharCode: ReadonlyArray<number> = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 45, 95];
@@ -1447,6 +1587,8 @@ interface LegacySettings {
 
 export class Instrument {
     public get isNoiseInstrument(): boolean { return this.type == InstrumentType.noise || this.type == InstrumentType.drumset; }
+    // Optional, versioned features. Unknown records are retained without being interpreted.
+    public capabilities: InstrumentCapability[] = [];
     public type: InstrumentType = InstrumentType.chip;
     public preset: number = 0;
     public chipWave: number = 2;
@@ -1567,6 +1709,7 @@ export class Instrument {
     public setTypeAndReset(type: InstrumentType, isNoiseChannel: boolean, isModChannel: boolean): void {
         // Mod channels are forced to one type.
         if (isModChannel) type = InstrumentType.mod;
+        this.capabilities = [];
         this.type = type;
         this.preset = type;
         this.volume = 0;
@@ -2006,6 +2149,9 @@ export class Instrument {
             envelopes.push(this.envelopes[i].toJsonObject());
         }
         instrumentObject["envelopes"] = envelopes;
+        if (this.capabilities.length > 0) {
+            instrumentObject["capabilities"] = copyInstrumentCapabilities(this.capabilities);
+        }
 
         return instrumentObject;
     }
@@ -2013,6 +2159,7 @@ export class Instrument {
 
     public fromJsonObject(instrumentObject: any, isNoiseChannel: boolean, isModChannel: boolean, useSlowerRhythm: boolean, useFastTwoNoteArp: boolean, legacyGlobalReverb: number = 0): void {
         if (instrumentObject == undefined) instrumentObject = {};
+        const capabilities: InstrumentCapability[] = copyInstrumentCapabilities(instrumentObject["capabilities"]);
 
         let type: InstrumentType = Config.instrumentTypeNames.indexOf(instrumentObject["type"]);
         if (<any>type == -1) type = isModChannel ? InstrumentType.mod : (isNoiseChannel ? InstrumentType.noise : InstrumentType.chip);
@@ -2507,6 +2654,7 @@ export class Instrument {
                 }
             }
         }
+        this.capabilities = capabilities;
     }
 
     public static frequencyFromPitch(pitch: number): number {
@@ -2614,6 +2762,7 @@ export class Song {
     private static readonly _latestJummBoxVersion: number = 5;
     private static readonly _oldestGoldBoxVersion: number = 1;
     private static readonly _latestGoldBoxVersion: number = 6;
+    private static readonly _capabilitySongVersion: number = 7;
     // One-character variant detection at the start of URL to distinguish variants such as JummBox, Or Goldbox. "j" and "g" respectively
     private static readonly _variant = 0x67; //"g" ~ goldbox
 
@@ -2936,9 +3085,13 @@ public getTunedFrequencyFromPitch(pitch: number): number {
     public toBase64String(includeTuning: boolean = true, includeChannelNames: boolean = true): string {
         let bits: BitFieldWriter;
         let buffer: number[] = [];
+        const hasCapabilities: boolean = this.channels.some(channel => channel.instruments.some(instrument => instrument.capabilities.length > 0));
 
-        buffer.push(this.pitchesPerOctave == 14 ? CharCode.T : includeTuning && (this.temperament != 0 || this.referenceA4Hz != 440) ? CharCode.B : Song._variant);
-        buffer.push(base64IntToCharCode[this.channels.some(c => c.instruments.some(i => i.octaveOffset !== 0 || i.envelopeCount > 0)) ? Song._latestGoldBoxVersion : 4]);
+        buffer.push(this.pitchesPerOctave == 14 ? CharCode.T : hasCapabilities || (includeTuning && (this.temperament != 0 || this.referenceA4Hz != 440)) ? CharCode.B : Song._variant);
+        // Preserve every existing version byte for ordinary songs. Version 7 opts into the
+        // new BetaRox-only capability tag; version 6 remains the legacy instrument extension.
+        const legacyInstrumentFeatures: boolean = this.channels.some(c => c.instruments.some(i => i.octaveOffset !== 0 || i.envelopeCount > 0));
+        buffer.push(base64IntToCharCode[hasCapabilities ? Song._capabilitySongVersion : legacyInstrumentFeatures ? 6 : 4]);
 
         // Length of the song name string
         buffer.push(SongTagCode.songTitle);
@@ -3279,6 +3432,19 @@ public getTunedFrequencyFromPitch(pitch: number): number {
                         buffer.push(base64IntToCharCode[envelope.waveform]);
                     }
                 }
+                if (instrument.capabilities.length > 0) {
+                    const encodedCapabilities: string = encodeURIComponent(JSON.stringify(copyInstrumentCapabilities(instrument.capabilities)));
+                    // Three base-64 digits allow a payload up to 256 KiB while keeping the
+                    // compact link parser bounded and independent of JSON delimiters.
+                    if (encodedCapabilities.length > maxInstrumentCapabilityPayloadLength) throw new Error("Instrument capability data is too large for BetaRox compact song history. Reduce the capability data before importing it.");
+                    buffer.push(SongTagCode.capabilities,
+                        base64IntToCharCode[(encodedCapabilities.length >> 12) & 0x3f],
+                        base64IntToCharCode[(encodedCapabilities.length >> 6) & 0x3f],
+                        base64IntToCharCode[encodedCapabilities.length & 0x3f]);
+                    for (let capabilityIndex: number = 0; capabilityIndex < encodedCapabilities.length; capabilityIndex++) {
+                        buffer.push(encodedCapabilities.charCodeAt(capabilityIndex));
+                    }
+                }
             }
         }
 
@@ -3564,7 +3730,7 @@ public getTunedFrequencyFromPitch(pitch: number): number {
         const version: number = base64CharCodeToInt[compressed.charCodeAt(charIndex++)];
         if (fromBeepBox && (version == -1 || version > Song._latestBeepboxVersion || version < Song._oldestBeepboxVersion)) return;
         if (fromJummBox && (version == -1 || version > Song._latestJummBoxVersion || version < Song._oldestJummBoxVersion)) return;
-        if (fromGoldBox && (version == -1 || version > Song._latestGoldBoxVersion || version < Song._oldestGoldBoxVersion)) return;
+        if (fromGoldBox && (version == -1 || version > Song._latestGoldBoxVersion && !(fromBetaRox && version == Song._capabilitySongVersion) || version < Song._oldestGoldBoxVersion)) return;
         const beforeTwo: boolean = version < 2;
         const beforeThree: boolean = version < 3;
         const beforeFour: boolean = version < 4;
@@ -4838,6 +5004,17 @@ public getTunedFrequencyFromPitch(pitch: number): number {
                 }
             }
                 break;
+            case SongTagCode.capabilities: {
+                if (!fromBetaRox || version < 7) throw new Error("Unsupported instrument capability song tag.");
+                const encodedLength: number = (base64CharCodeToInt[compressed.charCodeAt(charIndex++)] << 12) |
+                    (base64CharCodeToInt[compressed.charCodeAt(charIndex++)] << 6) |
+                    base64CharCodeToInt[compressed.charCodeAt(charIndex++)];
+                if (encodedLength < 0 || charIndex + encodedLength > compressed.length) throw new Error("Invalid instrument capability payload length.");
+                const encodedCapabilities: string = compressed.substring(charIndex, charIndex + encodedLength);
+                charIndex += encodedLength;
+                const parsedCapabilities: any = JSON.parse(decodeURIComponent(encodedCapabilities));
+                this.channels[instrumentChannelIterator].instruments[instrumentIndexIterator].capabilities = copyInstrumentCapabilities(parsedCapabilities);
+            } break;
             case SongTagCode.bars: {
                 let subStringLength: number;
                 if (beforeThree && fromBeepBox) {
@@ -6207,6 +6384,17 @@ class Tone {
     public pulseWidth: number = 0.0;
     public pulseWidthDelta: number = 0.0;
     public readonly pickedStrings: PickedString[] = [];
+    public spectralPhase: number = 0.0;
+    public spectralPhaseDelta: number = 0.0;
+    public spectralTimelineSampleOffset: number = 0;
+    public spectralTimelineSecondsAtTickStart: number = 0.0;
+    public spectralTimelineReleaseSamples: number = -1;
+    public spectralTimelineReleaseStartSeconds: number = 0.0;
+    public spectralTimelineFrameIndex: number = 0;
+    public readonly spectralNoteFilters: DynamicBiquadFilter[] = [];
+    public spectralPhaseDeltaScaleForTick: number = 1.0;
+    public spectralInitialNoteFilterInput1: number = 0.0;
+    public spectralInitialNoteFilterInput2: number = 0.0;
 
     public readonly noteFilters: DynamicBiquadFilter[] = [];
     public noteFilterCount: number = 0;
@@ -6251,6 +6439,17 @@ class Tone {
         this.initialNoteFilterInput1 = 0.0;
         this.initialNoteFilterInput2 = 0.0;
         this.liveInputSamplesHeld = 0;
+        this.spectralPhase = 0.0;
+        this.spectralPhaseDelta = 0.0;
+        this.spectralTimelineSampleOffset = 0;
+        this.spectralTimelineSecondsAtTickStart = 0.0;
+        this.spectralTimelineReleaseSamples = -1;
+        this.spectralTimelineReleaseStartSeconds = 0.0;
+        this.spectralTimelineFrameIndex = 0;
+        this.spectralPhaseDeltaScaleForTick = 1.0;
+        this.spectralInitialNoteFilterInput1 = 0.0;
+        this.spectralInitialNoteFilterInput2 = 0.0;
+        for (const filter of this.spectralNoteFilters) filter.resetOutput();
         for (const pickedString of this.pickedStrings) {
             pickedString.reset();
         }
@@ -6279,6 +6478,11 @@ class InstrumentState {
     public type: InstrumentType = InstrumentType.chip;
     public synthesizer: Function | null = null;
     public wave: Float32Array | null = null;
+    public spectralTimelineData: SpectralTimelineData | null = null;
+    public spectralTimelineAmplitudes: Float32Array[] = [];
+    public spectralTimelineFilterFrames: FilterCoefficients[][] = [];
+    private _spectralTimelineSource: SpectralTimelineData | null = null;
+    private _spectralTimelineSampleRate: number = -1;
     public noisePitchFilterMult: number = 1.0;
     public unison: Unison | null = null;
     public chord: Chord | null = null;
@@ -6384,6 +6588,30 @@ class InstrumentState {
     constructor() {
         for (let i: number = 0; i < Config.drumCount; i++) {
             this.drumsetSpectrumWaves[i] = new SpectrumWaveState();
+        }
+    }
+
+    private updateSpectralTimeline(instrument: Instrument, sampleRate: number): void {
+        const data: SpectralTimelineData | null = getSpectralTimelineData(instrument);
+        if (data === this._spectralTimelineSource && sampleRate == this._spectralTimelineSampleRate) return;
+
+        this._spectralTimelineSource = data;
+        this._spectralTimelineSampleRate = sampleRate;
+        this.spectralTimelineData = data;
+        this.spectralTimelineAmplitudes = [];
+        this.spectralTimelineFilterFrames = [];
+        if (data == null) return;
+
+        // Match the evolving audition's linear partial gains and normalization.
+        // Immutable rows are shared by notes; only phase and filter state are per Tone.
+        const normalizer: number = Math.max(1, ...data.frames.map(frame => frame.harmonics.reduce((sum, value) => sum + value, 0)));
+        for (const frame of data.frames) {
+            const amplitudes: Float32Array = new Float32Array(Config.harmonicsControlPoints);
+            for (let i: number = 0; i < Config.harmonicsControlPoints; i++) {
+                amplitudes[i] = frame.harmonics[i] * 0.24 / normalizer;
+            }
+            this.spectralTimelineAmplitudes.push(amplitudes);
+            this.spectralTimelineFilterFrames.push(frame.formantsHz.map(frequency => makeSpectralTimelinePeakFilter(frequency, sampleRate)));
         }
     }
 
@@ -6500,7 +6728,11 @@ class InstrumentState {
         this.computed = true;
 
         this.type = instrument.type;
-        this.synthesizer = Synth.getInstrumentSynthFunction(instrument);
+        this.updateSpectralTimeline(instrument, synth.samplesPerSecond);
+        const instrumentSynthesizer: Function = Synth.getInstrumentSynthFunction(instrument);
+        this.synthesizer = this.spectralTimelineData == null
+            ? instrumentSynthesizer
+            : Synth.getSpectralTimelineSynthFunction(instrumentSynthesizer);
         this.unison = Config.unisons[instrument.unison];
         this.chord = instrument.getChord();
         this.noisePitchFilterMult = Config.chipNoises[instrument.chipNoise].pitchFilterMult;
@@ -7319,6 +7551,7 @@ export class Synth {
     private static readonly fm6SynthFunctionCache: Dictionary<Function> = {};
     private static readonly effectsFunctionCache: Function[] = Array(1 << 7).fill(undefined); // keep in sync with the number of post-process effects.
     private static readonly pickedStringFunctionCache: Function[] = Array(3).fill(undefined); // keep in sync with the number of unison voices.
+    private static readonly spectralTimelineSynthFunctionCache: WeakMap<Function, Function> = new WeakMap<Function, Function>();
 
     private readonly channels: ChannelState[] = [];
     private readonly tonePool: Deque<Tone> = new Deque<Tone>();
@@ -8326,6 +8559,10 @@ export class Synth {
         instrumentState.releasedTones.pushFront(tone);
         tone.atNoteStart = false;
         tone.passedEndOfNote = true;
+        if (instrumentState.spectralTimelineData != null) {
+            tone.spectralTimelineReleaseSamples = 0;
+            tone.spectralTimelineReleaseStartSeconds = tone.envelopeComputer.noteSecondsEnd;
+        }
     }
 
     private freeReleasedTone(instrumentState: InstrumentState, toneIndex: number): void {
@@ -8932,6 +9169,105 @@ export class Synth {
     }
 
 
+    public static getSpectralTimelineSynthFunction(instrumentSynthesizer: Function): Function {
+        let wrappedSynthesizer: Function | undefined = Synth.spectralTimelineSynthFunctionCache.get(instrumentSynthesizer);
+        if (wrappedSynthesizer != undefined) return wrappedSynthesizer;
+
+        wrappedSynthesizer = (synth: Synth, bufferIndex: number, runLength: number, tone: Tone, instrumentState: InstrumentState): void => {
+            // A timeline-capable instrument is rendered from its recorded spectral
+            // frames only. Running the static instrument as well would double the
+            // sound and make the editor disagree with the evolving audition.
+            Synth.spectralTimelineSynth(synth, bufferIndex, runLength, tone, instrumentState, tone.expression, tone.expressionDelta);
+        };
+        Synth.spectralTimelineSynthFunctionCache.set(instrumentSynthesizer, wrappedSynthesizer);
+        return wrappedSynthesizer;
+    }
+
+    private static spectralTimelineSynth(synth: Synth, bufferIndex: number, runLength: number, tone: Tone, instrumentState: InstrumentState, expressionStart: number, expressionDelta: number): void {
+        const timeline: SpectralTimelineData | null = instrumentState.spectralTimelineData;
+        if (timeline == null || timeline.frames.length == 0) return;
+
+        const data: Float32Array = synth.tempMonoInstrumentSampleBuffer!;
+        const sampleRate: number = synth.samplesPerSecond;
+        const releaseSamples: number = tone.spectralTimelineReleaseSamples;
+        const releaseFadeLength: number = Math.max(1, Math.round(sampleRate * 0.005));
+        const frames: SpectralTimelineFrame[] = timeline.frames;
+        const amplitudeFrames: Float32Array[] = instrumentState.spectralTimelineAmplitudes;
+        let frameIndex: number = Math.min(tone.spectralTimelineFrameIndex, frames.length - 1);
+        let phase: number = tone.spectralPhase;
+        let phaseDelta: number = tone.spectralPhaseDelta;
+        let filterInput1: number = tone.spectralInitialNoteFilterInput1;
+        let filterInput2: number = tone.spectralInitialNoteFilterInput2;
+        const filterCount: number = timeline.applyFormantFilters ? 3 : 0;
+        const filters: DynamicBiquadFilter[] = tone.spectralNoteFilters;
+        while (filters.length < filterCount) filters.push(new DynamicBiquadFilter());
+        const stopIndex: number = bufferIndex + runLength;
+
+        for (let sampleIndex: number = bufferIndex; sampleIndex < stopIndex; sampleIndex++) {
+            const localSampleIndex: number = sampleIndex - bufferIndex;
+            const releaseOffset: number = releaseSamples >= 0 ? releaseSamples + localSampleIndex : -1;
+            const timelineSeconds: number = releaseSamples >= 0
+                ? tone.spectralTimelineReleaseStartSeconds
+                : tone.spectralTimelineSecondsAtTickStart + (tone.spectralTimelineSampleOffset + localSampleIndex) / sampleRate;
+
+            while (frameIndex + 1 < frames.length && frames[frameIndex + 1].timeSeconds <= timelineSeconds) frameIndex++;
+            const startFrame: SpectralTimelineFrame = frames[frameIndex];
+            const nextIndex: number = Math.min(frameIndex + 1, frames.length - 1);
+            const endFrame: SpectralTimelineFrame = frames[nextIndex];
+            const frameDuration: number = endFrame.timeSeconds - startFrame.timeSeconds;
+            const frameRatio: number = frameDuration > 0
+                ? Math.max(0, Math.min(1, (timelineSeconds - startFrame.timeSeconds) / frameDuration))
+                : 0;
+            const startAmplitudes: Float32Array = amplitudeFrames[frameIndex];
+            const endAmplitudes: Float32Array = amplitudeFrames[nextIndex];
+            const loudness: number = startFrame.loudness + (endFrame.loudness - startFrame.loudness) * frameRatio;
+            for (let filterIndex: number = 0; filterIndex < filterCount; filterIndex++) {
+                const start: FilterCoefficients = instrumentState.spectralTimelineFilterFrames[frameIndex][filterIndex];
+                const end: FilterCoefficients = instrumentState.spectralTimelineFilterFrames[nextIndex][filterIndex];
+                const filter: DynamicBiquadFilter = filters[filterIndex];
+                filter.a1 = start.a[1] + (end.a[1] - start.a[1]) * frameRatio;
+                filter.a2 = start.a[2] + (end.a[2] - start.a[2]) * frameRatio;
+                filter.b0 = start.b[0] + (end.b[0] - start.b[0]) * frameRatio;
+                filter.b1 = start.b[1] + (end.b[1] - start.b[1]) * frameRatio;
+                filter.b2 = start.b[2] + (end.b[2] - start.b[2]) * frameRatio;
+                filter.a1Delta = filter.a2Delta = filter.b0Delta = filter.b1Delta = filter.b2Delta = 0;
+                filter.useMultiplicativeInputCoefficients = false;
+            }
+            const fundamentalHz: number = phaseDelta * sampleRate;
+            let inputSample: number = 0;
+
+            for (let harmonicIndex: number = 0; harmonicIndex < Config.harmonicsControlPoints; harmonicIndex++) {
+                const harmonicNumber: number = harmonicIndex + 1;
+                if (fundamentalHz * harmonicNumber >= sampleRate * 0.5) break;
+                const amplitude: number = startAmplitudes[harmonicIndex] + (endAmplitudes[harmonicIndex] - startAmplitudes[harmonicIndex]) * frameRatio;
+                const tablePosition: number = ((phase * harmonicNumber) % 1) * spectralSineTableLength;
+                const tableIndex: number = tablePosition | 0;
+                const sine: number = spectralSineTable[tableIndex] + (spectralSineTable[tableIndex + 1] - spectralSineTable[tableIndex]) * (tablePosition - tableIndex);
+                inputSample += sine * amplitude;
+            }
+
+            let releaseFade: number = 1.0;
+            if (releaseOffset >= 0) releaseFade = Math.max(0, 1.0 - releaseOffset / releaseFadeLength);
+            const filteredSample: number = Synth.applyFilters(inputSample, filterInput1, filterInput2, filterCount, filters);
+            filterInput2 = filterInput1;
+            filterInput1 = inputSample;
+            data[sampleIndex] += filteredSample * loudness * releaseFade * expressionStart / Config.harmonicsBaseExpression;
+            expressionStart += expressionDelta;
+            phase += phaseDelta;
+            phase -= Math.floor(phase);
+            phaseDelta *= tone.spectralPhaseDeltaScaleForTick;
+        }
+
+        tone.spectralTimelineFrameIndex = frameIndex;
+        tone.spectralTimelineSampleOffset += runLength;
+        if (releaseSamples >= 0) tone.spectralTimelineReleaseSamples += runLength;
+        tone.spectralPhase = phase;
+        tone.spectralPhaseDelta = phaseDelta;
+        tone.spectralInitialNoteFilterInput1 = filterInput1;
+        tone.spectralInitialNoteFilterInput2 = filterInput2;
+        synth.sanitizeFilters(filters);
+    }
+
     private playTone(channelIndex: number, bufferIndex: number, runLength: number, tone: Tone): void {
         const channelState: ChannelState = this.channels[channelIndex];
         const instrumentState: InstrumentState = channelState.instruments[tone.instrumentIndex];
@@ -9179,6 +9515,8 @@ export class Synth {
         // Compute envelopes *after* resetting the tone, otherwise the envelope computer gets reset too!
         const envelopeComputer: EnvelopeComputer = tone.envelopeComputer;
         envelopeComputer.computeEnvelopes(instrument, currentPart, Config.ticksPerPart * partTimeStart, samplesPerTick / this.samplesPerSecond, tone);
+        tone.spectralTimelineSecondsAtTickStart = envelopeComputer.noteSecondsStart;
+        tone.spectralTimelineSampleOffset = 0;
         const envelopeStarts: number[] = tone.envelopeComputer.envelopeStarts;
         const envelopeEnds: number[] = tone.envelopeComputer.envelopeEnds;
         instrument.noteFilter = tmpNoteFilter;
@@ -9311,6 +9649,21 @@ export class Synth {
                 fadeExpressionEnd *= Math.min(1.0, envelopeComputer.noteSecondsEnd / fadeInSeconds);
             }
         }
+
+        // The spectral layer follows the note's tuned fundamental even when the
+        // native instrument uses FM operators or another synthesis method.
+        const spectralPitchStart: number = basePitch + (tone.pitches[0] + intervalStart) * intervalScale;
+        const spectralPitchEnd: number = basePitch + (tone.pitches[0] + intervalEnd) * intervalScale;
+        const spectralFrequencyStart: number = isNoiseChannel
+            ? Instrument.frequencyFromPitch(spectralPitchStart)
+            : song.getTunedFrequencyFromPitch(spectralPitchStart);
+        const spectralFrequencyEnd: number = isNoiseChannel
+            ? Instrument.frequencyFromPitch(spectralPitchEnd)
+            : song.getTunedFrequencyFromPitch(spectralPitchEnd);
+        tone.spectralPhaseDelta = spectralFrequencyStart / this.samplesPerSecond;
+        tone.spectralPhaseDeltaScaleForTick = spectralFrequencyStart > 0
+            ? Math.pow(spectralFrequencyEnd / spectralFrequencyStart, 1.0 / roundedSamplesPerTick)
+            : 1.0;
 
 
         if (instrument.type == InstrumentType.drumset && tone.drumsetPitch == null) {
