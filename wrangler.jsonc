@@ -15,7 +15,10 @@
   "previews": {
     "ratelimits": [
       { "name": "LOOP_USER_LIMIT", "namespace_id": "2026112105", "simple": { "limit": 4, "period": 60 } }
-    ]
+    ],
+    "vars": {
+      "BETASOUNDLABS_SPECTRAL_PREVIEW_URL": "https://feature-spectral-instrument-channel-import-betasoundlabs.zmisterzmaestro.workers.dev"
+    }
   },
   "services": [
     { "binding": "BETASOUNDLABS", "service": "betasoundlabs" }

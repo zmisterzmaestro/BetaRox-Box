@@ -8,7 +8,7 @@ import {SongEditor} from "./SongEditor";
 import {NotePin, Note, Pattern, Instrument, Channel, Song, Synth} from "../synth/synth";
 import {SongDocument} from "./SongDocument";
 import {ExportPrompt} from "./ExportPrompt";
-import {ChangePreset} from "./changes";
+import {ChangeAddChannel, ChangePreset} from "./changes";
 
 
 //namespace beepbox {
@@ -32,7 +32,47 @@ if (labLink) {
 	for (const event of ["focus", "pointerdown", "contextmenu", "click"]) {
 		labLink.addEventListener(event, syncLabLink);
 	}
+	labLink.target = "_blank";
+	labLink.rel = "opener";
 }
+
+// Spectral Lab sends only an instrument preset. Its example notes and song-wide
+// settings are deliberately excluded so the current song remains intact.
+window.addEventListener("message", (event: MessageEvent): void => {
+	if (event.origin !== location.origin || event.data?.type !== "betarox:spectral-instrument" || event.data?.target !== "editor") return;
+	const reply = (message: string, ok: boolean): void => {
+		if (event.source && "postMessage" in event.source) {
+			(event.source as Window).postMessage({ type: "betarox:spectral-import-status", message, ok }, event.origin);
+		}
+	};
+	try {
+		const rawInstrument = event.data.instrument;
+		if (!rawInstrument || typeof rawInstrument !== "object" || rawInstrument.type !== "harmonics" || !Array.isArray(rawInstrument.harmonics)) {
+			throw new Error("This is not a supported BetaRox spectral instrument.");
+		}
+		if (doc.song.pitchChannelCount >= Config.pitchChannelCountMax) {
+			reply("No channel was added. This song already has the maximum of " + Config.pitchChannelCountMax + " pitch channels.", false);
+			return;
+		}
+		// Parse and validate before changing the song, so malformed input cannot
+		// leave a partially added channel behind.
+		const importedInstrument = new Instrument(false, false);
+		importedInstrument.fromJsonObject(rawInstrument, false, false, doc.song.rhythm == 0 || doc.song.rhythm == 2, doc.song.rhythm >= 2);
+		const channelName = String(event.data.name || "Spectral Instrument").trim().slice(0, Channel.nameLengthMax) || "Spectral Instrument";
+		const newChannelIndex = doc.song.pitchChannelCount;
+		doc.record(new ChangeAddChannel(doc, newChannelIndex, false, false));
+		const newChannel = doc.song.channels[newChannelIndex];
+		newChannel.instruments[0] = importedInstrument;
+		newChannel.name = channelName;
+		doc.channel = newChannelIndex;
+		doc.viewedInstrument[newChannelIndex] = 0;
+		doc.notifier.changed();
+		reply("Imported “" + channelName + "” into a new channel. Existing channels and notes were preserved.", true);
+	} catch (error) {
+		const detail = error instanceof Error ? error.message : "The instrument could not be read.";
+		reply("Import failed; the song was left unchanged. " + detail, false);
+	}
+});
 
 // Fade-in transitions
 editor.mainLayer.className += " load";
