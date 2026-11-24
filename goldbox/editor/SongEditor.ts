@@ -12,7 +12,7 @@ import { CustomFilterPrompt } from "./CustomFilterPrompt";
 import { EditorConfig, isMobile, prettyNumber, Preset, PresetCategory } from "./EditorConfig";
 import { ExportPrompt } from "./ExportPrompt";
 import "./Layout"; // Imported here for the sake of ensuring this code is transpiled early.
-import { Instrument, Channel, Synth } from "../synth/synth";
+import { Instrument, Channel, Song, Synth } from "../synth/synth";
 import { HTML, SVG } from "imperative-html/dist/esm/elements-strict";
 import { Preferences } from "./Preferences";
 import { HarmonicsEditor } from "./HarmonicsEditor";
@@ -959,6 +959,9 @@ export class SongEditor {
             SVG.path({ d: "M 9 3 L 14 3 L 14 6 L 9 6 L 9 3 z M 16 8 L 20 12 L 16 12 L 16 8 z", fill: "currentColor", }),
         ]),
     ]);
+    private readonly _instrumentImportFile: HTMLInputElement = input({ type: "file", accept: ".json,application/json", style: "display:none;" });
+    private readonly _instrumentImportButton: HTMLButtonElement = button({ style: "max-width:180px;", class: "pasteButton" }, "Import preset");
+    private readonly _instrumentImportRow: HTMLDivElement = div({ class: "selectRow" }, this._instrumentImportButton, this._instrumentImportFile);
 
     public readonly _globalOscscope: oscilascopeCanvas = new oscilascopeCanvas(canvas({ width: 144, height: 32, style: "border:2px solid " + ColorConfig.uiWidgetBackground, id: "oscilascopeAll" }), 1);
     private readonly _customWaveDrawCanvas: CustomChipCanvas = new CustomChipCanvas(canvas({ width: 128, height: 52, style: "border:2px solid " + ColorConfig.uiWidgetBackground, id: "customWaveDrawCanvas" }), this._doc, (newArray: Float32Array) => new ChangeCustomWave(this._doc, newArray));
@@ -1045,6 +1048,7 @@ export class SongEditor {
             this._instrumentCopyButton,
             this._instrumentPasteButton,
         ),
+        this._instrumentImportRow,
     );
     private readonly _instrumentSettingsTextRow: HTMLDivElement = div({ id: "instrumentSettingsText", style: `padding: 3px 0; max-width: 15em; text-align: center; color: ${ColorConfig.secondaryText};` },
         "Instrument Settings"
@@ -1498,6 +1502,8 @@ export class SongEditor {
         this.mainLayer.addEventListener("focusin", this._onFocusIn);
         this._instrumentCopyButton.addEventListener("click", this._copyInstrument.bind(this));
         this._instrumentPasteButton.addEventListener("click", this._pasteInstrument.bind(this));
+        this._instrumentImportButton.addEventListener("click", () => this._instrumentImportFile.click());
+        this._instrumentImportFile.addEventListener("change", this._importInstrumentPreset);
 
         this._instrumentVolumeSliderInputBox.addEventListener("input", () => { this._doc.record(new ChangeVolume(this._doc, this._doc.song.channels[this._doc.channel].instruments[this._doc.getCurrentInstrument()].volume, Math.min(25.0, Math.max(-25.0, Math.round(+this._instrumentVolumeSliderInputBox.value))))) });
         this._instrumentOctaveSelect.addEventListener("change", () => this._doc.record(new ChangeInstrumentOctave(this._doc, Number(this._instrumentOctaveSelect.value))));
@@ -2014,6 +2020,8 @@ export class SongEditor {
 
         if (!this._doc.song.getChannelIsMod(this._doc.channel)) {
 
+            this._instrumentImportRow.style.display = "";
+
             this._customInstrumentSettingsGroup.style.display = "";
             this._panSliderRow.style.display = "";
             this._panDropdownGroup.style.display = (this._openPanDropdown ? "" : "none");
@@ -2382,6 +2390,7 @@ export class SongEditor {
         }
         // Options for mod channel
         else {
+            this._instrumentImportRow.style.display = "none";
             this._usageCheck(this._doc.channel, instrumentIndex);
 
             this._pitchedPresetSelect.style.display = "none";
@@ -3976,6 +3985,44 @@ export class SongEditor {
         instrumentCopy["isDrum"] = this._doc.song.getChannelIsNoise(this._doc.channel);
         window.localStorage.setItem("instrumentCopy", JSON.stringify(instrumentCopy));
         this.refocusStage();
+    }
+
+    private _importInstrumentPreset = (): void => {
+        const file: File | undefined = this._instrumentImportFile.files?.[0];
+        this._instrumentImportFile.value = "";
+        if (!file) return;
+
+        const channelIndex: number = this._doc.channel;
+        if (this._doc.song.getChannelIsNoise(channelIndex) || this._doc.song.getChannelIsMod(channelIndex)) {
+            window.alert("Choose a pitched channel before importing this instrument preset.");
+            return;
+        }
+        const target: Instrument = this._doc.song.channels[channelIndex].instruments[this._doc.getCurrentInstrument()];
+        const reader: FileReader = new FileReader();
+        reader.addEventListener("load", () => {
+            try {
+                const sourceSong: Song = new Song(String(reader.result));
+                let sourceInstrument: Instrument | null = null;
+                for (let i: number = 0; i < sourceSong.channels.length; i++) {
+                    if (!sourceSong.getChannelIsNoise(i) && !sourceSong.getChannelIsMod(i) && sourceSong.channels[i].instruments.length > 0) {
+                        sourceInstrument = sourceSong.channels[i].instruments[0];
+                        break;
+                    }
+                }
+                if (sourceInstrument == null) throw new Error("This file does not contain a pitched instrument.");
+
+                const instrumentCopy: any = sourceInstrument.toJsonObject();
+                instrumentCopy["isDrum"] = false;
+                instrumentCopy["isMod"] = false;
+                this._doc.record(new ChangePasteInstrument(this._doc, target, instrumentCopy));
+                this.refocusStage();
+            } catch (error) {
+                const message: string = error instanceof Error ? error.message : "The file could not be read.";
+                window.alert("Could not import preset: " + message);
+            }
+        });
+        reader.addEventListener("error", () => window.alert("Could not read the selected preset file."));
+        reader.readAsText(file);
     }
 
     private _pasteInstrument = (): void => {
