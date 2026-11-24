@@ -1,0 +1,748 @@
+{
+  "name": "Spectral Timeline Audition",
+  "format": "BeepBox",
+  "version": 6,
+  "scale": "Free",
+  "customScale": [
+    true,
+    false,
+    true,
+    true,
+    false,
+    false,
+    false,
+    true,
+    true,
+    false,
+    true,
+    true
+  ],
+  "temperament": "12-TET",
+  "referenceA4Hz": 440,
+  "key": "C",
+  "introBars": 0,
+  "loopBars": 4,
+  "beatsPerBar": 8,
+  "ticksPerBeat": 4,
+  "beatsPerMinute": 150,
+  "reverb": 0,
+  "masterGain": 1,
+  "compressionThreshold": 1,
+  "limitThreshold": 1,
+  "limitDecay": 4,
+  "limitRise": 4000,
+  "limitRatio": 1,
+  "compressionRatio": 1,
+  "layeredInstruments": false,
+  "patternInstruments": false,
+  "channels": [
+    {
+      "type": "pitch",
+      "name": "",
+      "instruments": [
+        {
+          "type": "harmonics",
+          "volume": 0,
+          "octaveOffset": 0,
+          "eqFilter": [],
+          "eqFilterType": false,
+          "eqSimpleCut": 10,
+          "eqSimplePeak": 0,
+          "effects": [
+            "note filter"
+          ],
+          "chord": "simultaneous",
+          "fastTwoNoteArp": false,
+          "arpeggioSpeed": 12,
+          "pan": 0,
+          "panDelay": 10,
+          "fadeInSeconds": 0,
+          "fadeOutTicks": -1,
+          "unison": "none",
+          "envelopes": [],
+          "capabilities": [
+            {
+              "id": "betarox.spectral-timeline",
+              "version": 1,
+              "data": {
+                "durationSeconds": 1.2,
+                "frames": [
+                  {
+                    "timeSeconds": 0,
+                    "loudness": 0.42,
+                    "harmonics": [
+                      1,
+                      0.5,
+                      0.28,
+                      0.12,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "formantsHz": [
+                      700,
+                      1400,
+                      2600
+                    ]
+                  },
+                  {
+                    "timeSeconds": 0.2,
+                    "loudness": 0.82,
+                    "harmonics": [
+                      1,
+                      0.18,
+                      0.08,
+                      0.8,
+                      0.55,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "formantsHz": [
+                      720,
+                      1700,
+                      3200
+                    ]
+                  },
+                  {
+                    "timeSeconds": 0.4,
+                    "loudness": 0.58,
+                    "harmonics": [
+                      1,
+                      0.08,
+                      0.72,
+                      0.48,
+                      0.18,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "formantsHz": [
+                      900,
+                      2200,
+                      3700
+                    ]
+                  },
+                  {
+                    "timeSeconds": 0.6,
+                    "loudness": 0.93,
+                    "harmonics": [
+                      1,
+                      0.65,
+                      0.24,
+                      0.08,
+                      0.62,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "formantsHz": [
+                      1100,
+                      1900,
+                      3300
+                    ]
+                  },
+                  {
+                    "timeSeconds": 0.8,
+                    "loudness": 0.48,
+                    "harmonics": [
+                      1,
+                      0.12,
+                      0.08,
+                      0.7,
+                      0.48,
+                      0.22,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "formantsHz": [
+                      800,
+                      1500,
+                      2800
+                    ]
+                  },
+                  {
+                    "timeSeconds": 1,
+                    "loudness": 0.7,
+                    "harmonics": [
+                      1,
+                      0.35,
+                      0.62,
+                      0.18,
+                      0.08,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "formantsHz": [
+                      650,
+                      1300,
+                      2400
+                    ]
+                  },
+                  {
+                    "timeSeconds": 1.2,
+                    "loudness": 0.2,
+                    "harmonics": [
+                      0.75,
+                      0.12,
+                      0.55,
+                      0.32,
+                      0.08,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "formantsHz": [
+                      500,
+                      1000,
+                      2100
+                    ]
+                  }
+                ],
+                "applyFormantFilters": true,
+                "formantGainsLinear": [
+                  1.68,
+                  1.68,
+                  1.68
+                ]
+              }
+            }
+          ],
+          "harmonics": [
+            100,
+            50,
+            28,
+            12,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "noteFilterType": false,
+          "noteFilter": [
+            {
+              "type": "peak",
+              "cutoffHz": 700,
+              "linearGain": 1.68
+            },
+            {
+              "type": "peak",
+              "cutoffHz": 1400,
+              "linearGain": 1.68
+            },
+            {
+              "type": "peak",
+              "cutoffHz": 2600,
+              "linearGain": 1.68
+            }
+          ]
+        }
+      ],
+      "patterns": [
+        {
+          "notes": [
+            {
+              "pitches": [
+                36
+              ],
+              "points": [
+                {
+                  "tick": 0,
+                  "pitchBend": 0,
+                  "volume": 100,
+                  "forMod": false
+                },
+                {
+                  "tick": 0.3333333333333333,
+                  "pitchBend": 0,
+                  "volume": 100,
+                  "forMod": false
+                }
+              ],
+              "continuesLastPattern": false
+            },
+            {
+              "pitches": [
+                43
+              ],
+              "points": [
+                {
+                  "tick": 0.3333333333333333,
+                  "pitchBend": 0,
+                  "volume": 100,
+                  "forMod": false
+                },
+                {
+                  "tick": 2.3333333333333335,
+                  "pitchBend": 0,
+                  "volume": 100,
+                  "forMod": false
+                }
+              ]
+            },
+            {
+              "pitches": [
+                48
+              ],
+              "points": [
+                {
+                  "tick": 2.3333333333333335,
+                  "pitchBend": 0,
+                  "volume": 100,
+                  "forMod": false
+                },
+                {
+                  "tick": 5,
+                  "pitchBend": 0,
+                  "volume": 100,
+                  "forMod": false
+                }
+              ]
+            },
+            {
+              "pitches": [
+                52
+              ],
+              "points": [
+                {
+                  "tick": 4,
+                  "pitchBend": 0,
+                  "volume": 100,
+                  "forMod": false
+                },
+                {
+                  "tick": 5.333333333333333,
+                  "pitchBend": 0,
+                  "volume": 100,
+                  "forMod": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        }
+      ],
+      "sequence": [
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "octaveScrollBar": 2
+    },
+    {
+      "type": "pitch",
+      "name": "",
+      "instruments": [
+        {
+          "type": "chip",
+          "volume": 0,
+          "octaveOffset": 0,
+          "eqFilter": [],
+          "eqFilterType": false,
+          "eqSimpleCut": 10,
+          "eqSimplePeak": 0,
+          "effects": [
+            "panning",
+            "chord type"
+          ],
+          "chord": "arpeggio",
+          "fastTwoNoteArp": false,
+          "arpeggioSpeed": 12,
+          "pan": 0,
+          "panDelay": 10,
+          "fadeInSeconds": 0,
+          "fadeOutTicks": -1,
+          "wave": "square",
+          "unison": "none",
+          "envelopes": []
+        }
+      ],
+      "patterns": [
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        }
+      ],
+      "sequence": [
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "octaveScrollBar": 1
+    },
+    {
+      "type": "pitch",
+      "name": "",
+      "instruments": [
+        {
+          "type": "chip",
+          "volume": 0,
+          "octaveOffset": 0,
+          "eqFilter": [],
+          "eqFilterType": false,
+          "eqSimpleCut": 10,
+          "eqSimplePeak": 0,
+          "effects": [
+            "panning",
+            "chord type"
+          ],
+          "chord": "arpeggio",
+          "fastTwoNoteArp": false,
+          "arpeggioSpeed": 12,
+          "pan": 0,
+          "panDelay": 10,
+          "fadeInSeconds": 0,
+          "fadeOutTicks": -1,
+          "wave": "square",
+          "unison": "none",
+          "envelopes": []
+        }
+      ],
+      "patterns": [
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        }
+      ],
+      "sequence": [
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "octaveScrollBar": 0
+    },
+    {
+      "type": "drum",
+      "name": "",
+      "instruments": [
+        {
+          "type": "noise",
+          "volume": 0,
+          "octaveOffset": 0,
+          "eqFilter": [],
+          "eqFilterType": false,
+          "eqSimpleCut": 10,
+          "eqSimplePeak": 0,
+          "effects": [
+            "panning",
+            "chord type"
+          ],
+          "chord": "arpeggio",
+          "fastTwoNoteArp": false,
+          "arpeggioSpeed": 12,
+          "pan": 0,
+          "panDelay": 10,
+          "fadeInSeconds": 0,
+          "fadeOutTicks": -1,
+          "wave": "white",
+          "envelopes": []
+        }
+      ],
+      "patterns": [
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        },
+        {
+          "notes": []
+        }
+      ],
+      "sequence": [
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}
