@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 10502)
-Total output lines: 891
-
 // Copyright (c) 2012-2022 John Nesky and contributing authors, distributed under the MIT license, see accompanying the LICENSE.md file.
 
 import { InstrumentType, Config } from "../synth/SynthConfig";
@@ -57,17 +54,6 @@ export class ImportPrompt implements Prompt {
 		if (extension == "json") {
 			const reader: FileReader = new FileReader();
 			reader.addEventListener("load", (event: Event): void => {
-				// Parse and serialize in isolation first. A malformed or oversized optional
-				// capability must not partially replace the song currently being edited.
-				try {
-					const importedSong: Song = new Song(<string>reader.result);
-					importedSong.toBase64String();
-				} catch (error) {
-					const detail: string = error instanceof Error ? error.message : String(error);
-					window.alert("Unable to import this song. The current song was left unchanged. " + detail);
-					this._fileInput.value = "";
-					return;
-				}
 				this._doc.prompt = null;
 				this._doc.goBackToStart();
 				this._doc.record(new ChangeSong(this._doc, <string>reader.result), true, true);
@@ -442,7 +428,48 @@ export class ImportPrompt implements Prompt {
 				let prevEventPart: number = 0;
 				let setInstrumentVolume: boolean = false;
 					
-				const presetValue: number = EditorConfig.nameToPresetValue("standard dr…502 tokens truncated…er = channelMaxPitch;
+				const presetValue: number = EditorConfig.nameToPresetValue("standard drumset")!;
+				const preset: Preset = EditorConfig.valueToPreset(presetValue)!;
+				const instrument: Instrument = new Instrument(false, false);
+					instrument.fromJsonObject(preset.settings, false, false, false, false, 1);
+					
+				instrument.preset = presetValue;
+				channel.instruments.push(instrument);
+
+				for (let noteEventIndex: number = 0; noteEventIndex <= noteEvents[midiChannel].length; noteEventIndex++) {
+					const noMoreNotes: boolean = noteEventIndex == noteEvents[midiChannel].length;
+					const noteEvent: NoteEvent | null = noMoreNotes ? null : noteEvents[midiChannel][noteEventIndex];
+					const nextEventPart: number = noteEvent == null ? Number.MAX_SAFE_INTEGER : quantizeMidiTickToPart(noteEvent.midiTick);
+					if (heldPitches.length > 0 && nextEventPart > prevEventPart && (noteEvent == null || noteEvent.on)) {
+						const bar: number = Math.floor(prevEventPart / partsPerBar);
+						const barStartPart: number = bar * partsPerBar;
+						// Ensure a pattern exists for the current bar before inserting notes into it.
+						if (currentBar != bar || pattern == null) {
+							currentBar++;
+							while (currentBar < bar) {
+								channel.bars[currentBar] = 0;
+								currentBar++;
+							}
+							pattern = new Pattern();
+							channel.patterns.push(pattern);
+							channel.bars[currentBar] = channel.patterns.length;
+							pattern.instruments[0] = 0;
+							pattern.instruments.length = 1;
+						}
+							
+						// Use the loudest volume setting for the instrument, since 
+						// many midis unfortunately use the instrument volume control to fade
+						// in at the beginning and we don't want to get stuck with the initial
+						// zero volume.
+						if (!setInstrumentVolume || instrument.volume > currentInstrumentVolume) {
+							instrument.volume = currentInstrumentVolume;
+							instrument.pan = currentInstrumentPan;
+							instrument.panDelay = 0;
+							setInstrumentVolume = true;
+						}
+						
+						const drumFreqs: number[] = [];
+						let minDuration: number = channelMaxPitch;
 						let maxDuration: number = 0;
 						let noteSize: number = 1; // the minimum non-zero note size.
 						for (const pitch of heldPitches) {
