@@ -403,10 +403,6 @@ export class Layout {
 					text-align: right;
 				}
 				@media (max-height: 700px) {
-					.beepboxEditor {
-						/* Give Song Settings more of a short window; the channel strip can clip sooner. */
-						grid-template-rows: auto auto auto minmax(0, 1fr) minmax(0, min(18vh, 120px));
-					}
 					.beepboxEditor .song-settings-area {
 						--button-size: clamp(18px, 3.8vh, 26px);
 						font-size: clamp(11px, 2.2vh, 13px);
